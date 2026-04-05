@@ -14,7 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      analyses: {
+        Row: {
+          created_at: string
+          detected_keywords: string[] | null
+          email_content: string
+          explanation: string
+          id: string
+          risk_percentage: number
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          detected_keywords?: string[] | null
+          email_content: string
+          explanation: string
+          id?: string
+          risk_percentage: number
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          detected_keywords?: string[] | null
+          email_content?: string
+          explanation?: string
+          id?: string
+          risk_percentage?: number
+          session_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
