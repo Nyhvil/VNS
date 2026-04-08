@@ -156,6 +156,7 @@ const Index = () => {
             explanation={result.explanation}
             dangerousPhrases={result.dangerousPhrases || []}
             advice={result.advice || ""}
+            extractedText={result.extractedText}
           />
         )}
 
