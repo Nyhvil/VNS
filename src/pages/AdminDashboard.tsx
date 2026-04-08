@@ -27,11 +27,15 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const { data: rows } = await supabase
-        .from("analyses")
-        .select("*")
-        .order("created_at", { ascending: false });
-      setData(rows || []);
+      try {
+        const { data: responseData, error } = await supabase.functions.invoke(
+          "get-analyses"
+        );
+        if (error) throw error;
+        setData(responseData || []);
+      } catch (err) {
+        console.error("Failed to fetch analyses");
+      }
       setLoading(false);
     };
     fetchData();
