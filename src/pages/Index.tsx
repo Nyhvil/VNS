@@ -15,6 +15,7 @@ interface AnalysisResponse {
   explanation: string;
   dangerousPhrases: string[];
   advice: string;
+  extractedText?: string;
 }
 
 const Index = () => {
