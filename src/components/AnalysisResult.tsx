@@ -10,7 +10,7 @@ interface AnalysisResultProps {
   advice: string;
 }
 
-const AnalysisResult = ({ riskLevel, explanation, dangerousPhrases, advice }: AnalysisResultProps) => {
+const AnalysisResult = ({ riskLevel, explanation, dangerousPhrases, advice, extractedText }: AnalysisResultProps) => {
   const getConfig = (level: string) => {
     switch (level) {
       case "SCAM":
