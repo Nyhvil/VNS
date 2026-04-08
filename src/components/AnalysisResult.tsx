@@ -4,12 +4,13 @@ import { ShieldCheck, ShieldAlert, ShieldX, AlertTriangle } from "lucide-react";
 
 interface AnalysisResultProps {
   riskLevel: string;
+  extractedText?: string;
   explanation: string;
   dangerousPhrases: string[];
   advice: string;
 }
 
-const AnalysisResult = ({ riskLevel, explanation, dangerousPhrases, advice }: AnalysisResultProps) => {
+const AnalysisResult = ({ riskLevel, explanation, dangerousPhrases, advice, extractedText }: AnalysisResultProps) => {
   const getConfig = (level: string) => {
     switch (level) {
       case "SCAM":
@@ -59,6 +60,15 @@ const AnalysisResult = ({ riskLevel, explanation, dangerousPhrases, advice }: An
             {explanation}
           </p>
         </div>
+
+        {extractedText && (
+          <div className="space-y-1">
+            <p className="text-xs font-medium text-muted-foreground">📝 Văn bản trích xuất từ ảnh (đã chuẩn hóa):</p>
+            <div className="bg-muted/50 rounded-lg p-3 border border-border max-h-32 overflow-y-auto">
+              <p className="text-xs text-muted-foreground whitespace-pre-wrap">{extractedText}</p>
+            </div>
+          </div>
+        )}
 
         {dangerousPhrases.length > 0 && (
           <div className="space-y-2">

@@ -15,6 +15,7 @@ interface AnalysisResponse {
   explanation: string;
   dangerousPhrases: string[];
   advice: string;
+  extractedText?: string;
 }
 
 const Index = () => {
@@ -155,6 +156,7 @@ const Index = () => {
             explanation={result.explanation}
             dangerousPhrases={result.dangerousPhrases || []}
             advice={result.advice || ""}
+            extractedText={result.extractedText}
           />
         )}
 
