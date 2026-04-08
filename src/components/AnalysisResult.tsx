@@ -4,6 +4,7 @@ import { ShieldCheck, ShieldAlert, ShieldX, AlertTriangle } from "lucide-react";
 
 interface AnalysisResultProps {
   riskLevel: string;
+  extractedText?: string;
   explanation: string;
   dangerousPhrases: string[];
   advice: string;
