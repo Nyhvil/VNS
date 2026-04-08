@@ -44,6 +44,42 @@ export type Database = {
         }
         Relationships: []
       }
+      scans: {
+        Row: {
+          ai_result: string
+          content_text: string | null
+          created_at: string
+          dangerous_phrases: string[] | null
+          id: string
+          image_url: string | null
+          risk_level: string
+          session_id: string
+          type: string
+        }
+        Insert: {
+          ai_result: string
+          content_text?: string | null
+          created_at?: string
+          dangerous_phrases?: string[] | null
+          id?: string
+          image_url?: string | null
+          risk_level: string
+          session_id: string
+          type: string
+        }
+        Update: {
+          ai_result?: string
+          content_text?: string | null
+          created_at?: string
+          dangerous_phrases?: string[] | null
+          id?: string
+          image_url?: string | null
+          risk_level?: string
+          session_id?: string
+          type?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
