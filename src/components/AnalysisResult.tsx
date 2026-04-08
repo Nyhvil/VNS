@@ -61,6 +61,15 @@ const AnalysisResult = ({ riskLevel, explanation, dangerousPhrases, advice, extr
           </p>
         </div>
 
+        {extractedText && (
+          <div className="space-y-1">
+            <p className="text-xs font-medium text-muted-foreground">📝 Văn bản trích xuất từ ảnh (đã chuẩn hóa):</p>
+            <div className="bg-muted/50 rounded-lg p-3 border border-border max-h-32 overflow-y-auto">
+              <p className="text-xs text-muted-foreground whitespace-pre-wrap">{extractedText}</p>
+            </div>
+          </div>
+        )
+
         {dangerousPhrases.length > 0 && (
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm font-medium text-foreground">
