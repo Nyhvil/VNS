@@ -68,7 +68,7 @@ const AnalysisResult = ({ riskLevel, explanation, dangerousPhrases, advice, extr
               <p className="text-xs text-muted-foreground whitespace-pre-wrap">{extractedText}</p>
             </div>
           </div>
-        )
+        )}
 
         {dangerousPhrases.length > 0 && (
           <div className="space-y-2">
