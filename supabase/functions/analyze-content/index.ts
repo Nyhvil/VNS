@@ -6,6 +6,67 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+/** Common OCR misreads and scam obfuscation patterns */
+function normalizeOCRText(raw: string): string {
+  let text = raw;
+
+  // Word-level replacements (case-insensitive)
+  const wordFixes: Record<string, string> = {
+    "acc0unt": "account",
+    "passw0rd": "password",
+    "verlfy": "verify",
+    "ver1fy": "verify",
+    "verlfy": "verify",
+    "s1gn": "sign",
+    "l0gin": "login",
+    "log1n": "login",
+    "c0nfirm": "confirm",
+    "c0ntact": "contact",
+    "susp1cious": "suspicious",
+    "seclurity": "security",
+    "secur1ty": "security",
+    "lnformation": "information",
+    "inf0rmation": "information",
+    "transact1on": "transaction",
+    "act1vity": "activity",
+    "upd4te": "update",
+    "cl1ck": "click",
+    "llnk": "link",
+    "l1nk": "link",
+    "rec0very": "recovery",
+    "exp1red": "expired",
+    "susp3nded": "suspended",
+    "bl0cked": "blocked",
+    "b1ocked": "blocked",
+    "wr0ng": "wrong",
+  };
+
+  for (const [bad, good] of Object.entries(wordFixes)) {
+    text = text.replace(new RegExp(bad, "gi"), good);
+  }
+
+  // URL-related fixes
+  text = text.replace(/\bhltp/gi, "http");
+  text = text.replace(/\bhltps/gi, "https");
+  text = text.replace(/\.corn\b/gi, ".com");
+  text = text.replace(/\.c0m\b/gi, ".com");
+  text = text.replace(/\.n3t\b/gi, ".net");
+  text = text.replace(/\.0rg\b/gi, ".org");
+
+  // Character-level fixes in likely-text contexts (not inside URLs)
+  // Replace standalone 0 with o when surrounded by letters
+  text = text.replace(/(?<=[a-zA-Z])0(?=[a-zA-Z])/g, "o");
+  // Replace standalone 1 with l when surrounded by letters
+  text = text.replace(/(?<=[a-zA-Z])1(?=[a-zA-Z])/g, "l");
+  // Fix common rn → m misread
+  text = text.replace(/\brn(?=[a-zA-Z])/g, "m");
+
+  // Clean up whitespace
+  text = text.replace(/\s+/g, " ").trim();
+
+  return text;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -24,10 +85,69 @@ Deno.serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
+    const aiHeaders = {
+      Authorization: `Bearer ${LOVABLE_API_KEY}`,
+      "Content-Type": "application/json",
+    };
+    const aiUrl = "https://ai.gateway.lovable.dev/v1/chat/completions";
+
+    let extractedText: string | null = null;
+
+    // ── STEP 1: If image, extract text via vision OCR first ──
+    if (imageBase64) {
+      const ocrResponse = await fetch(aiUrl, {
+        method: "POST",
+        headers: aiHeaders,
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            {
+              role: "system",
+              content:
+                "Bạn là công cụ OCR. Trích xuất TOÀN BỘ văn bản có trong hình ảnh, giữ nguyên bố cục. Chỉ trả về văn bản thuần, không giải thích gì thêm.",
+            },
+            {
+              role: "user",
+              content: [
+                {
+                  type: "text",
+                  text: "Trích xuất toàn bộ văn bản trong hình ảnh này.",
+                },
+                {
+                  type: "image_url",
+                  image_url: { url: `data:image/jpeg;base64,${imageBase64}` },
+                },
+              ],
+            },
+          ],
+        }),
+      });
+
+      if (ocrResponse.ok) {
+        const ocrData = await ocrResponse.json();
+        const rawOCR = ocrData.choices?.[0]?.message?.content || "";
+        // ── STEP 2: Normalize OCR text ──
+        extractedText = normalizeOCRText(rawOCR);
+        console.log("OCR extracted & normalized:", extractedText.substring(0, 200));
+      }
+    }
+
+    // ── STEP 3: Analyze with LLM ──
+    const analysisInput = extractedText
+      ? text
+        ? `${extractedText}\n\n--- Nội dung bổ sung từ người dùng ---\n${text}`
+        : extractedText
+      : text;
+
     const systemPrompt = `Bạn là chuyên gia an ninh mạng tại Việt Nam.
 Hãy phân tích nội dung sau và cho biết đây có phải lừa đảo/phishing không.
 Giải thích rõ lý do bằng tiếng Việt.
 Phân loại: SAFE, SUSPICIOUS, SCAM.
+
+LƯU Ý QUAN TRỌNG:
+- Nội dung này được trích xuất từ ảnh bằng OCR nên có thể còn lỗi ký tự. Hãy đọc theo ngữ cảnh.
+- Các dấu hiệu lừa đảo phổ biến: yêu cầu mật khẩu, OTP, chuyển tiền, link lạ, tạo khẩn cấp giả.
+- Nếu nội dung chứa link đáng ngờ, yêu cầu thông tin cá nhân, hoặc tạo áp lực → phân loại SUSPICIOUS hoặc SCAM.
 
 Trả lời theo format JSON (không có markdown code block):
 {
@@ -37,49 +157,20 @@ Trả lời theo format JSON (không có markdown code block):
   "advice": "lời khuyên cho người dùng bằng tiếng Việt"
 }`;
 
-    // Build messages based on input type
     const messages: any[] = [{ role: "system", content: systemPrompt }];
+    messages.push({
+      role: "user",
+      content: `Phân tích nội dung sau:\n\n${analysisInput}`,
+    });
 
-    if (imageBase64) {
-      // Use Gemini vision with image
-      messages.push({
-        role: "user",
-        content: [
-          {
-            type: "text",
-            text: text
-              ? `Phân tích hình ảnh này cùng với nội dung sau để phát hiện lừa đảo:\n\n${text}`
-              : "Đọc và phân tích nội dung trong hình ảnh này để phát hiện lừa đảo/phishing. Trích xuất toàn bộ văn bản trong ảnh và phân tích.",
-          },
-          {
-            type: "image_url",
-            image_url: { url: `data:image/jpeg;base64,${imageBase64}` },
-          },
-        ],
-      });
-    } else {
-      messages.push({
-        role: "user",
-        content: `Phân tích nội dung email/tin nhắn sau:\n\n${text}`,
-      });
-    }
-
-    const aiResponse = await fetch(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: imageBase64
-            ? "google/gemini-2.5-flash"
-            : "google/gemini-3-flash-preview",
-          messages,
-        }),
-      }
-    );
+    const aiResponse = await fetch(aiUrl, {
+      method: "POST",
+      headers: aiHeaders,
+      body: JSON.stringify({
+        model: "google/gemini-3-flash-preview",
+        messages,
+      }),
+    });
 
     if (!aiResponse.ok) {
       if (aiResponse.status === 429) {
@@ -105,7 +196,6 @@ Trả lời theo format JSON (không có markdown code block):
     // Parse AI response
     let result;
     try {
-      // Try to extract JSON from the response
       const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
       result = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
     } catch {
@@ -121,13 +211,17 @@ Trả lời theo format JSON (không có markdown code block):
       };
     }
 
+    // Add extracted text to response for UI display
+    if (extractedText) {
+      result.extractedText = extractedText;
+    }
+
     // Save to database
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // If image, upload to storage
     let imageUrl: string | null = null;
     if (imageBase64) {
       const fileName = `${crypto.randomUUID()}.jpg`;
@@ -148,7 +242,7 @@ Trả lời theo format JSON (không có markdown code block):
     await supabaseAdmin.from("scans").insert({
       session_id: sessionId || crypto.randomUUID(),
       type: imageBase64 ? "image" : "text",
-      content_text: text || null,
+      content_text: extractedText || text || null,
       image_url: imageUrl,
       risk_level: result.riskLevel,
       ai_result: result.explanation,
