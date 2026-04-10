@@ -42,9 +42,18 @@ Deno.serve(async (req) => {
     const textScans = scans?.filter((s: any) => s.type === "text").length || 0;
     const imageScans = scans?.filter((s: any) => s.type === "image").length || 0;
 
+    // User tracking stats
+    const userIds = (scans || []).map((s: any) => s.user_id).filter(Boolean);
+    const uniqueUsers = new Set(userIds).size;
+    const userScanCounts: Record<string, number> = {};
+    for (const uid of userIds) {
+      userScanCounts[uid] = (userScanCounts[uid] || 0) + 1;
+    }
+    const returnUsers = Object.values(userScanCounts).filter((c) => c > 1).length;
+
     return new Response(
       JSON.stringify({
-        stats: { uniqueSessions, totalScans, textScans, imageScans },
+        stats: { uniqueSessions, totalScans, textScans, imageScans, uniqueUsers, returnUsers },
         scans: scans || [],
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
