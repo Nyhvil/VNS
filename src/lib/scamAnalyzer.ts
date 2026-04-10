@@ -62,3 +62,11 @@ export function generateSessionId(): string {
   sessionStorage.setItem("mailguard_session_id", id);
   return id;
 }
+
+export function getUserId(): string {
+  const existing = localStorage.getItem("mailguard_user_id");
+  if (existing) return existing;
+  const id = crypto.randomUUID();
+  localStorage.setItem("mailguard_user_id", id);
+  return id;
+}

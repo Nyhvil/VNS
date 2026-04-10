@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  Shield, Users, BarChart3, Loader2, ImageIcon, FileText, Lock,
+  Shield, Users, BarChart3, Loader2, ImageIcon, FileText, Lock, UserCheck, RefreshCw,
 } from "lucide-react";
 
 interface ScanRow {
@@ -27,6 +27,8 @@ interface Stats {
   totalScans: number;
   textScans: number;
   imageScans: number;
+  uniqueUsers: number;
+  returnUsers: number;
 }
 
 const Admin = () => {
@@ -111,13 +113,22 @@ const Admin = () => {
 
       <main className="container mx-auto max-w-6xl px-4 py-8 space-y-6">
         {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           <Card>
             <CardContent className="flex items-center gap-3 pt-6">
-              <Users className="h-8 w-8 text-primary shrink-0" />
+              <UserCheck className="h-8 w-8 text-primary shrink-0" />
               <div>
-                <p className="text-xs text-muted-foreground">Tổng phiên</p>
-                <p className="text-2xl font-bold text-foreground">{stats?.uniqueSessions ?? 0}</p>
+                <p className="text-xs text-muted-foreground">Người dùng</p>
+                <p className="text-2xl font-bold text-foreground">{stats?.uniqueUsers ?? 0}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="flex items-center gap-3 pt-6">
+              <RefreshCw className="h-8 w-8 text-teal-500 shrink-0" />
+              <div>
+                <p className="text-xs text-muted-foreground">Quay lại</p>
+                <p className="text-2xl font-bold text-foreground">{stats?.returnUsers ?? 0}</p>
               </div>
             </CardContent>
           </Card>

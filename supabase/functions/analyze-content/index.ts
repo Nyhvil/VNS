@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { text, imageBase64, sessionId } = await req.json();
+    const { text, imageBase64, sessionId, userId } = await req.json();
 
     if (!text && !imageBase64) {
       return new Response(
@@ -241,6 +241,7 @@ Trả lời theo format JSON (không có markdown code block):
 
     await supabaseAdmin.from("scans").insert({
       session_id: sessionId || crypto.randomUUID(),
+      user_id: userId || null,
       type: imageBase64 ? "image" : "text",
       content_text: extractedText || text || null,
       image_url: imageUrl,

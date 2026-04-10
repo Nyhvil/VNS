@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Shield, Mail, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { generateSessionId } from "@/lib/scamAnalyzer";
+import { generateSessionId, getUserId } from "@/lib/scamAnalyzer";
 import ImageUpload from "@/components/ImageUpload";
 import AnalysisResult from "@/components/AnalysisResult";
 import { useToast } from "@/hooks/use-toast";
@@ -33,11 +33,13 @@ const Index = () => {
 
     try {
       const sessionId = generateSessionId();
+      const userId = getUserId();
       const { data, error } = await supabase.functions.invoke("analyze-content", {
         body: {
           text: emailContent.trim() || null,
           imageBase64: imageBase64 || null,
           sessionId,
+          userId,
         },
       });
 
