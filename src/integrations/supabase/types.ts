@@ -55,6 +55,7 @@ export type Database = {
           risk_level: string
           session_id: string
           type: string
+          user_id: string | null
         }
         Insert: {
           ai_result: string
@@ -66,6 +67,7 @@ export type Database = {
           risk_level: string
           session_id: string
           type: string
+          user_id?: string | null
         }
         Update: {
           ai_result?: string
@@ -77,6 +79,7 @@ export type Database = {
           risk_level?: string
           session_id?: string
           type?: string
+          user_id?: string | null
         }
         Relationships: []
       }
