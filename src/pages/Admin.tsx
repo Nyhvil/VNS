@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Shield, Users, BarChart3, Loader2, ImageIcon, FileText, Lock, UserCheck, RefreshCw,
+  Hash, Percent, Type, ThumbsUp, ThumbsDown,
 } from "lucide-react";
 
 interface ScanRow {
@@ -29,6 +30,12 @@ interface Stats {
   imageScans: number;
   uniqueUsers: number;
   returnUsers: number;
+  totalAnalyses: number;
+  avgScamPercent: number;
+  totalCharsAnalyzed: number;
+  returningSessions: number;
+  correctFeedback: number;
+  incorrectFeedback: number;
 }
 
 const Admin = () => {
@@ -81,19 +88,12 @@ const Admin = () => {
             <CardTitle>Admin Access</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Input
-              type="password"
-              placeholder="Nhập mật khẩu admin..."
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-            />
+            <Input type="password" placeholder="Nhập mật khẩu admin..."
+              value={password} onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleLogin()} />
             {error && <p className="text-sm text-red-500">{error}</p>}
-            <Button
-              onClick={handleLogin}
-              disabled={!password || loading}
-              className="w-full bg-yellow-500 text-foreground hover:bg-yellow-400"
-            >
+            <Button onClick={handleLogin} disabled={!password || loading}
+              className="w-full bg-yellow-500 text-foreground hover:bg-yellow-400">
               {loading ? <Loader2 className="animate-spin" /> : "Đăng nhập"}
             </Button>
           </CardContent>
@@ -112,7 +112,7 @@ const Admin = () => {
       </header>
 
       <main className="container mx-auto max-w-6xl px-4 py-8 space-y-6">
-        {/* Stats */}
+        {/* Stats row 1 */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           <Card>
             <CardContent className="flex items-center gap-3 pt-6">
@@ -136,26 +136,57 @@ const Admin = () => {
             <CardContent className="flex items-center gap-3 pt-6">
               <BarChart3 className="h-8 w-8 text-yellow-500 shrink-0" />
               <div>
-                <p className="text-xs text-muted-foreground">Tổng lượt kiểm tra</p>
-                <p className="text-2xl font-bold text-foreground">{stats?.totalScans ?? 0}</p>
+                <p className="text-xs text-muted-foreground">Tổng lượt</p>
+                <p className="text-2xl font-bold text-foreground">{stats?.totalAnalyses ?? 0}</p>
               </div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="flex items-center gap-3 pt-6">
-              <FileText className="h-8 w-8 text-blue-500 shrink-0" />
+              <Percent className="h-8 w-8 text-orange-500 shrink-0" />
               <div>
-                <p className="text-xs text-muted-foreground">Kiểm tra text</p>
-                <p className="text-2xl font-bold text-foreground">{stats?.textScans ?? 0}</p>
+                <p className="text-xs text-muted-foreground">TB Scam %</p>
+                <p className="text-2xl font-bold text-foreground">{stats?.avgScamPercent ?? 0}%</p>
               </div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="flex items-center gap-3 pt-6">
-              <ImageIcon className="h-8 w-8 text-purple-500 shrink-0" />
+              <Type className="h-8 w-8 text-blue-500 shrink-0" />
               <div>
-                <p className="text-xs text-muted-foreground">Kiểm tra ảnh</p>
-                <p className="text-2xl font-bold text-foreground">{stats?.imageScans ?? 0}</p>
+                <p className="text-xs text-muted-foreground">Tổng ký tự</p>
+                <p className="text-2xl font-bold text-foreground">{(stats?.totalCharsAnalyzed ?? 0).toLocaleString()}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="flex items-center gap-3 pt-6">
+              <Hash className="h-8 w-8 text-purple-500 shrink-0" />
+              <div>
+                <p className="text-xs text-muted-foreground">Returning Sessions</p>
+                <p className="text-2xl font-bold text-foreground">{stats?.returningSessions ?? 0}</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Feedback stats */}
+        <div className="grid grid-cols-2 gap-4 max-w-md">
+          <Card>
+            <CardContent className="flex items-center gap-3 pt-6">
+              <ThumbsUp className="h-8 w-8 text-green-500 shrink-0" />
+              <div>
+                <p className="text-xs text-muted-foreground">Chính xác</p>
+                <p className="text-2xl font-bold text-foreground">{stats?.correctFeedback ?? 0}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="flex items-center gap-3 pt-6">
+              <ThumbsDown className="h-8 w-8 text-red-500 shrink-0" />
+              <div>
+                <p className="text-xs text-muted-foreground">Không chính xác</p>
+                <p className="text-2xl font-bold text-foreground">{stats?.incorrectFeedback ?? 0}</p>
               </div>
             </CardContent>
           </Card>
@@ -168,9 +199,7 @@ const Admin = () => {
           </CardHeader>
           <CardContent>
             {scans.length === 0 ? (
-              <p className="text-muted-foreground text-sm text-center py-8">
-                Chưa có dữ liệu
-              </p>
+              <p className="text-muted-foreground text-sm text-center py-8">Chưa có dữ liệu</p>
             ) : (
               <div className="overflow-x-auto">
                 <Table>
@@ -203,21 +232,11 @@ const Admin = () => {
                         </TableCell>
                         <TableCell>
                           {row.image_url ? (
-                            <a
-                              href={row.image_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs text-primary underline"
-                            >
-                              Xem ảnh
-                            </a>
-                          ) : (
-                            "—"
-                          )}
+                            <a href={row.image_url} target="_blank" rel="noopener noreferrer"
+                              className="text-xs text-primary underline">Xem ảnh</a>
+                          ) : "—"}
                         </TableCell>
-                        <TableCell className="text-right">
-                          {getRiskBadge(row.risk_level)}
-                        </TableCell>
+                        <TableCell className="text-right">{getRiskBadge(row.risk_level)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 
 interface AnalysisResponse {
   riskLevel: string;
+  scamPercent: number;
   explanation: string;
   dangerousPhrases: string[];
   advice: string;
@@ -68,7 +69,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="border-b border-border bg-card">
         <div className="container mx-auto flex items-center gap-3 px-4 py-4">
           <div className="relative">
@@ -79,24 +79,16 @@ const Index = () => {
             <span className="text-foreground">Mail</span>
             <span className="text-yellow-500">Guard</span>
           </h1>
-          <Badge variant="secondary" className="ml-2 text-xs">
-            AI-Powered
-          </Badge>
+          <Badge variant="secondary" className="ml-2 text-xs">AI-Powered</Badge>
         </div>
       </header>
 
       <main className="container mx-auto max-w-3xl px-4 py-8 space-y-6">
-        {/* Hero */}
         <div className="text-center space-y-2">
-          <h2 className="text-xl font-semibold text-foreground">
-            Phát hiện lừa đảo bằng AI
-          </h2>
-          <p className="text-muted-foreground text-sm">
-            Dán nội dung email hoặc tải ảnh chụp màn hình để kiểm tra mức độ rủi ro
-          </p>
+          <h2 className="text-xl font-semibold text-foreground">Phát hiện lừa đảo bằng AI</h2>
+          <p className="text-muted-foreground text-sm">Dán nội dung email hoặc tải ảnh chụp màn hình để kiểm tra mức độ rủi ro</p>
         </div>
 
-        {/* Input area */}
         <Card>
           <CardContent className="pt-6 space-y-4">
             <Textarea
@@ -105,56 +97,28 @@ const Index = () => {
               value={emailContent}
               onChange={(e) => setEmailContent(e.target.value)}
             />
-
             <ImageUpload
-              onImageSelected={(base64, preview) => {
-                setImageBase64(base64);
-                setImagePreview(preview);
-              }}
-              onImageRemoved={() => {
-                setImageBase64(null);
-                setImagePreview(null);
-              }}
+              onImageSelected={(base64, preview) => { setImageBase64(base64); setImagePreview(preview); }}
+              onImageRemoved={() => { setImageBase64(null); setImagePreview(null); }}
               previewUrl={imagePreview}
               disabled={isAnalyzing}
             />
-
             <div className="flex gap-2">
-              <Button
-                onClick={handleAnalyze}
-                disabled={!hasInput || isAnalyzing}
-                className="flex-1 bg-yellow-500 text-foreground font-semibold hover:bg-yellow-400 transition-colors h-12 text-base"
-              >
-                {isAnalyzing ? (
-                  <>
-                    <Loader2 className="animate-spin" />
-                    Đang phân tích...
-                  </>
-                ) : (
-                  <>
-                    <Shield className="h-5 w-5" />
-                    Phân Tích Ngay
-                  </>
-                )}
+              <Button onClick={handleAnalyze} disabled={!hasInput || isAnalyzing}
+                className="flex-1 bg-yellow-500 text-foreground font-semibold hover:bg-yellow-400 transition-colors h-12 text-base">
+                {isAnalyzing ? (<><Loader2 className="animate-spin" />Đang phân tích...</>) : (<><Shield className="h-5 w-5" />Phân Tích Ngay</>)}
               </Button>
               {(emailContent || imageBase64 || result) && (
-                <Button
-                  variant="outline"
-                  onClick={handleReset}
-                  disabled={isAnalyzing}
-                  className="h-12"
-                >
-                  Xóa
-                </Button>
+                <Button variant="outline" onClick={handleReset} disabled={isAnalyzing} className="h-12">Xóa</Button>
               )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Result */}
         {result && (
           <AnalysisResult
             riskLevel={result.riskLevel}
+            scamPercent={result.scamPercent}
             explanation={result.explanation}
             dangerousPhrases={result.dangerousPhrases || []}
             advice={result.advice || ""}
@@ -162,7 +126,6 @@ const Index = () => {
           />
         )}
 
-        {/* Footer */}
         <p className="text-center text-xs text-muted-foreground pb-8">
           © 2026 MailGuard — Công cụ phát hiện lừa đảo cho người Việt
         </p>

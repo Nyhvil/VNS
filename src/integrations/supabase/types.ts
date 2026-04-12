@@ -44,6 +44,36 @@ export type Database = {
         }
         Relationships: []
       }
+      mailguard_logs: {
+        Row: {
+          created_at: string
+          feedback: string | null
+          id: string
+          scam_percent: number
+          session_id: string
+          text_length: number
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          scam_percent?: number
+          session_id: string
+          text_length?: number
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          scam_percent?: number
+          session_id?: string
+          text_length?: number
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       scans: {
         Row: {
           ai_result: string
