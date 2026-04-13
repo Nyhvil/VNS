@@ -17,6 +17,11 @@ interface AnalysisResponse {
   dangerousPhrases: string[];
   advice: string;
   extractedText?: string;
+  verificationSummary?: string;
+  urlsChecked?: number;
+  suspiciousUrls?: { url: string; reasons: string[] }[];
+  entitiesMentioned?: { found: string[]; category: string; verified: boolean }[];
+  scamPatternsMatched?: { name: string; risk: number; keywords: string[] }[];
 }
 
 const Index = () => {
@@ -123,6 +128,11 @@ const Index = () => {
             dangerousPhrases={result.dangerousPhrases || []}
             advice={result.advice || ""}
             extractedText={result.extractedText}
+            verificationSummary={result.verificationSummary}
+            urlsChecked={result.urlsChecked}
+            suspiciousUrls={result.suspiciousUrls}
+            entitiesMentioned={result.entitiesMentioned}
+            scamPatternsMatched={result.scamPatternsMatched}
           />
         )}
 
