@@ -139,10 +139,61 @@ const AnalysisResult = ({ riskLevel, scamPercent, explanation, dangerousPhrases,
           </div>
         )}
 
-        {advice && (
+        {/* Verification Details */}
+        {(suspiciousUrls && suspiciousUrls.length > 0) || (scamPatternsMatched && scamPatternsMatched.length > 0) || (entitiesMentioned && entitiesMentioned.length > 0) ? (
+          <div className="space-y-3 border-t border-border pt-3">
+            <p className="text-xs font-medium text-muted-foreground">🔍 Kết quả xác minh đa lớp:</p>
+
+            {suspiciousUrls && suspiciousUrls.length > 0 && (
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-red-400">⚠️ URL đáng ngờ ({suspiciousUrls.length}):</p>
+                {suspiciousUrls.map((u, i) => (
+                  <div key={i} className="bg-red-500/5 rounded p-2 text-xs">
+                    <p className="font-mono text-red-400 truncate">{u.url}</p>
+                    <p className="text-muted-foreground mt-0.5">{u.reasons.join("; ")}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {entitiesMentioned && entitiesMentioned.length > 0 && (
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-blue-400">🏢 Tổ chức được nhắc đến:</p>
+                <div className="flex flex-wrap gap-1">
+                  {entitiesMentioned.map((e, i) => (
+                    <Badge key={i} variant="outline" className="text-xs bg-blue-500/10 text-blue-400 border-blue-500/20">
+                      {e.found.join(", ")} ({e.category})
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {scamPatternsMatched && scamPatternsMatched.length > 0 && (
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-orange-400">🎯 Mẫu lừa đảo khớp:</p>
+                {scamPatternsMatched.map((p, i) => (
+                  <div key={i} className="bg-orange-500/5 rounded p-2 text-xs">
+                    <p className="font-medium text-orange-400">{p.name} — Nguy hiểm: {p.risk}%</p>
+                    <p className="text-muted-foreground">Từ khóa: {p.keywords.join(", ")}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {urlsChecked !== undefined && urlsChecked > 0 && suspiciousUrls?.length === 0 && (
+              <p className="text-xs text-green-400">✅ Đã kiểm tra {urlsChecked} URL — không phát hiện bất thường</p>
+            )}
+          </div>
+        ) : null}
+
+        {verificationSummary && (
           <div className="bg-muted/50 rounded-lg p-3 border border-border">
             <p className="text-sm text-muted-foreground">
-              💡 <span className="font-medium text-foreground">Lời khuyên:</span> {advice}
+              🔎 <span className="font-medium text-foreground">Tóm tắt xác minh:</span> {verificationSummary}
+            </p>
+          </div>
+        )}
             </p>
           </div>
         )}
