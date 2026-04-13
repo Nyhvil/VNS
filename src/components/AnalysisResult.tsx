@@ -194,9 +194,6 @@ const AnalysisResult = ({ riskLevel, scamPercent, explanation, dangerousPhrases,
             </p>
           </div>
         )}
-            </p>
-          </div>
-        )}
 
         {/* Feedback */}
         <div className="border-t border-border pt-4">
