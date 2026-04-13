@@ -1,0 +1,60 @@
+{
+  "banks": [
+    "Vietcombank", "VCB", "Techcombank", "TCB", "BIDV", "Agribank", "VPBank", "MBBank", "MB Bank",
+    "ACB", "Sacombank", "STB", "HDBank", "TPBank", "VIB", "SHB", "MSB", "SeABank", "OCB",
+    "LPBank", "LienVietPostBank", "Eximbank", "ABBank", "BacABank", "BaoVietBank", "CBBank",
+    "GPBank", "KienLongBank", "NamABank", "NCB", "PGBank", "PVcomBank", "Saigonbank",
+    "VietABank", "VietBank", "VietCapitalBank", "Woori Bank Vietnam", "HSBC Vietnam",
+    "Standard Chartered Vietnam", "Citibank Vietnam", "UOB Vietnam", "Shinhan Vietnam",
+    "CIMB Vietnam", "Public Bank Vietnam", "Cake by VPBank", "Ubank by VPBank", "TNEX"
+  ],
+  "ewallets": [
+    "MoMo", "ZaloPay", "VNPay", "VNPAY", "ShopeePay", "Viettel Money", "ViettelPay",
+    "Payoo", "SmartPay", "Foxpay", "Galaxy Pay", "Moca", "Appota Pay", "TrueMoney"
+  ],
+  "ecommerce": [
+    "Shopee", "Lazada", "Tiki", "Sendo", "Tiktok Shop", "TikTok Shop",
+    "Thế Giới Di Động", "Điện Máy Xanh", "Bách Hoá Xanh", "CellphoneS", "FPT Shop",
+    "Hoàng Hà Mobile", "Di Động Việt", "Hnam Mobile", "Nguyễn Kim", "Phong Vũ"
+  ],
+  "telcos": [
+    "Viettel", "Mobifone", "MobiFone", "Vinaphone", "VinaPhone", "Vietnamobile",
+    "Gmobile", "Reddi", "iTelecom", "Wintel", "Local"
+  ],
+  "government": [
+    "Bộ Công an", "Công an", "CSGT", "VNeID", "Cổng Dịch vụ công", "BHXH",
+    "Bảo hiểm xã hội", "Thuế", "Tổng cục Thuế", "Hải quan", "Bộ Y tế",
+    "Bộ Giáo dục", "Bộ Tư pháp", "UBND", "Sở Kế hoạch", "Sở Tài chính"
+  ],
+  "delivery": [
+    "GHN", "Giao Hàng Nhanh", "GHTK", "Giao Hàng Tiết Kiệm", "J&T Express",
+    "Viettel Post", "VNPost", "Bưu điện", "Ninja Van", "Best Express",
+    "Kerry Express", "SPX Express", "Shopee Express", "Lazada Express", "Grab Express",
+    "Ahamove", "Lalamove", "Be"
+  ],
+  "airlines": [
+    "Vietnam Airlines", "VietJet Air", "Vietjet", "Bamboo Airways", "Pacific Airlines",
+    "Vietravel Airlines"
+  ],
+  "tech": [
+    "FPT", "VNPT", "Viettel", "CMC", "VNG", "Zalo", "VinAI", "VinBigData",
+    "Base.vn", "KiotViet", "Haravan", "Sapo", "Pancake", "Bizfly"
+  ],
+  "universities": [
+    "Đại học Bách Khoa", "ĐHQG", "ĐH Quốc Gia", "FPT University", "RMIT Vietnam",
+    "Đại học Kinh tế", "Đại học Ngoại thương", "Đại học Y", "Đại học Luật",
+    "Đại học Sư phạm", "Đại học Công nghệ", "Đại học Tôn Đức Thắng", "UEH", "NEU"
+  ],
+  "hospitals": [
+    "Bệnh viện Bạch Mai", "Bệnh viện Chợ Rẫy", "Bệnh viện 108", "Bệnh viện 115",
+    "Bệnh viện Đại học Y Dược", "Vinmec", "FV Hospital", "Bệnh viện Nhi",
+    "Bệnh viện Từ Dũ", "Bệnh viện Phụ sản"
+  ],
+  "official_domains": [
+    "gov.vn", "edu.vn", "vietcombank.com.vn", "techcombank.com.vn", "bidv.com.vn",
+    "agribank.com.vn", "vpbank.com.vn", "mbbank.com.vn", "acb.com.vn", "tpbank.com.vn",
+    "shopee.vn", "lazada.vn", "tiki.vn", "momo.vn", "zalopay.vn", "vnpay.vn",
+    "viettel.com.vn", "mobifone.vn", "vinaphone.com.vn", "fpt.com.vn", "vnpt.com.vn",
+    "vietnamairlines.com", "vietjetair.com"
+  ]
+}
