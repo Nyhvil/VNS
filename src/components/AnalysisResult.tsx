@@ -6,6 +6,23 @@ import { ShieldCheck, ShieldAlert, ShieldX, AlertTriangle, ThumbsUp, ThumbsDown,
 import { supabase } from "@/integrations/supabase/client";
 import { generateSessionId } from "@/lib/scamAnalyzer";
 
+interface UrlCheckResult {
+  url: string;
+  reasons: string[];
+}
+
+interface EntityResult {
+  found: string[];
+  category: string;
+  verified: boolean;
+}
+
+interface PatternMatch {
+  name: string;
+  risk: number;
+  keywords: string[];
+}
+
 interface AnalysisResultProps {
   riskLevel: string;
   scamPercent?: number;
@@ -13,6 +30,11 @@ interface AnalysisResultProps {
   explanation: string;
   dangerousPhrases: string[];
   advice: string;
+  verificationSummary?: string;
+  urlsChecked?: number;
+  suspiciousUrls?: UrlCheckResult[];
+  entitiesMentioned?: EntityResult[];
+  scamPatternsMatched?: PatternMatch[];
 }
 
 const AnalysisResult = ({ riskLevel, scamPercent, explanation, dangerousPhrases, advice, extractedText }: AnalysisResultProps) => {
