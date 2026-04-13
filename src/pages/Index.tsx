@@ -128,6 +128,11 @@ const Index = () => {
             dangerousPhrases={result.dangerousPhrases || []}
             advice={result.advice || ""}
             extractedText={result.extractedText}
+            verificationSummary={result.verificationSummary}
+            urlsChecked={result.urlsChecked}
+            suspiciousUrls={result.suspiciousUrls}
+            entitiesMentioned={result.entitiesMentioned}
+            scamPatternsMatched={result.scamPatternsMatched}
           />
         )}
 
