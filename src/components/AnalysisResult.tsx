@@ -37,7 +37,7 @@ interface AnalysisResultProps {
   scamPatternsMatched?: PatternMatch[];
 }
 
-const AnalysisResult = ({ riskLevel, scamPercent, explanation, dangerousPhrases, advice, extractedText }: AnalysisResultProps) => {
+const AnalysisResult = ({ riskLevel, scamPercent, explanation, dangerousPhrases, advice, extractedText, verificationSummary, urlsChecked, suspiciousUrls, entitiesMentioned, scamPatternsMatched }: AnalysisResultProps) => {
   const [feedbackSent, setFeedbackSent] = useState(false);
 
   const getConfig = (level: string) => {
