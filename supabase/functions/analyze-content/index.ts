@@ -1,4 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import verifiedEntities from "./verified_entities_2026.json" with { type: "json" };
+import scamPatterns from "./vietnam_scam_patterns.json" with { type: "json" };
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -6,6 +8,84 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+// ─── Step 1: URL extraction & safety check ───
+function extractUrls(text: string): string[] {
+  const urlRegex = /https?:\/\/[^\s<>"')\]]+/gi;
+  return [...new Set(text.match(urlRegex) || [])];
+}
+
+function analyzeDomainSafety(urls: string[], officialDomains: string[]): { url: string; suspicious: boolean; reasons: string[] }[] {
+  return urls.map((url) => {
+    const reasons: string[] = [];
+    let hostname = "";
+    try { hostname = new URL(url).hostname.toLowerCase(); } catch { reasons.push("URL không hợp lệ"); return { url, suspicious: true, reasons }; }
+
+    // Check if domain is official
+    const isOfficial = officialDomains.some((d) => hostname === d || hostname.endsWith("." + d));
+    if (isOfficial) return { url, suspicious: false, reasons: ["Domain chính thức đã xác minh"] };
+
+    // Suspicious TLD
+    const suspiciousTLDs = [".xyz", ".top", ".buzz", ".tk", ".ml", ".ga", ".cf", ".gq", ".click", ".loan", ".work", ".racing", ".date", ".download", ".stream", ".bid", ".trade", ".win", ".party", ".science", ".review", ".accountant"];
+    if (suspiciousTLDs.some((tld) => hostname.endsWith(tld))) reasons.push("Tên miền đuôi đáng ngờ: " + hostname.split(".").pop());
+
+    // Typosquatting check — look-alike official domains
+    const typoTargets = ["vietcombank", "techcombank", "bidv", "agribank", "vpbank", "mbbank", "momo", "zalopay", "shopee", "lazada", "tiki", "vnpay", "viettel"];
+    for (const target of typoTargets) {
+      if (hostname.includes(target) && !officialDomains.some((d) => hostname === d || hostname.endsWith("." + d))) {
+        reasons.push(`Có thể giả mạo ${target}`);
+      }
+    }
+
+    // URL shorteners
+    const shorteners = ["bit.ly", "tinyurl.com", "t.co", "goo.gl", "is.gd", "v.gd", "s.id", "rb.gy", "cutt.ly", "shorturl.at"];
+    if (shorteners.some((s) => hostname === s)) reasons.push("Link rút gọn — có thể ẩn URL thật");
+
+    // IP address as domain
+    if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) reasons.push("Domain là địa chỉ IP — rất đáng ngờ");
+
+    // Very long subdomain
+    if (hostname.split(".").length > 4) reasons.push("Quá nhiều subdomain — dấu hiệu phishing");
+
+    return { url, suspicious: reasons.length > 0, reasons: reasons.length > 0 ? reasons : ["Không phát hiện dấu hiệu bất thường rõ ràng"] };
+  });
+}
+
+// ─── Step 2: Entity verification ───
+function checkEntities(text: string): { found: string[]; category: string; verified: boolean }[] {
+  const results: { found: string[]; category: string; verified: boolean }[] = [];
+  const textLower = text.toLowerCase();
+
+  for (const [category, entities] of Object.entries(verifiedEntities)) {
+    if (category === "official_domains") continue;
+    const matched = (entities as string[]).filter((e) => textLower.includes(e.toLowerCase()));
+    if (matched.length > 0) {
+      results.push({ found: matched, category, verified: true });
+    }
+  }
+  return results;
+}
+
+// ─── Step 3: Scam pattern matching ───
+function matchScamPatterns(text: string): { id: string; name: string; matchedKeywords: string[]; risk_weight: number; description: string }[] {
+  const textLower = text.toLowerCase();
+  const matches: { id: string; name: string; matchedKeywords: string[]; risk_weight: number; description: string }[] = [];
+
+  for (const pattern of scamPatterns.patterns) {
+    const matchedKw = pattern.keywords.filter((kw) => textLower.includes(kw.toLowerCase()));
+    if (matchedKw.length >= 1) {
+      matches.push({
+        id: pattern.id,
+        name: pattern.name,
+        matchedKeywords: matchedKw,
+        risk_weight: pattern.risk_weight,
+        description: pattern.description,
+      });
+    }
+  }
+  return matches.sort((a, b) => b.risk_weight - a.risk_weight);
+}
+
+// ─── OCR normalization ───
 function normalizeOCRText(raw: string): string {
   let text = raw;
   const wordFixes: Record<string, string> = {
@@ -21,12 +101,9 @@ function normalizeOCRText(raw: string): string {
   for (const [bad, good] of Object.entries(wordFixes)) {
     text = text.replace(new RegExp(bad, "gi"), good);
   }
-  text = text.replace(/\bhltp/gi, "http");
-  text = text.replace(/\bhltps/gi, "https");
-  text = text.replace(/\.corn\b/gi, ".com");
-  text = text.replace(/\.c0m\b/gi, ".com");
-  text = text.replace(/\.n3t\b/gi, ".net");
-  text = text.replace(/\.0rg\b/gi, ".org");
+  text = text.replace(/\bhltp/gi, "http").replace(/\bhltps/gi, "https");
+  text = text.replace(/\.corn\b/gi, ".com").replace(/\.c0m\b/gi, ".com");
+  text = text.replace(/\.n3t\b/gi, ".net").replace(/\.0rg\b/gi, ".org");
   text = text.replace(/(?<=[a-zA-Z])0(?=[a-zA-Z])/g, "o");
   text = text.replace(/(?<=[a-zA-Z])1(?=[a-zA-Z])/g, "l");
   text = text.replace(/\brn(?=[a-zA-Z])/g, "m");
@@ -34,6 +111,7 @@ function normalizeOCRText(raw: string): string {
   return text;
 }
 
+// ─── Main handler ───
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -52,14 +130,11 @@ Deno.serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-    const aiHeaders = {
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
-      "Content-Type": "application/json",
-    };
+    const aiHeaders = { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" };
     const aiUrl = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
+    // ─── OCR if image ───
     let extractedText: string | null = null;
-
     if (imageBase64) {
       const ocrResponse = await fetch(aiUrl, {
         method: "POST",
@@ -75,48 +150,93 @@ Deno.serve(async (req) => {
           ],
         }),
       });
-
       if (ocrResponse.ok) {
         const ocrData = await ocrResponse.json();
-        const rawOCR = ocrData.choices?.[0]?.message?.content || "";
-        extractedText = normalizeOCRText(rawOCR);
+        extractedText = normalizeOCRText(ocrData.choices?.[0]?.message?.content || "");
       }
     }
 
-    const analysisInput = extractedText
+    const contentToAnalyze = extractedText
       ? text ? `${extractedText}\n\n--- Nội dung bổ sung từ người dùng ---\n${text}` : extractedText
       : text;
 
-    const systemPrompt = `Bạn là chuyên gia an ninh mạng tại Việt Nam.
-Hãy phân tích nội dung sau và cho biết đây có phải lừa đảo/phishing không.
+    // ─── Step 1: URL safety ───
+    const urls = extractUrls(contentToAnalyze);
+    const urlResults = analyzeDomainSafety(urls, verifiedEntities.official_domains);
+    const suspiciousUrls = urlResults.filter((u) => u.suspicious);
+
+    // ─── Step 2: Entity verification ───
+    const entityResults = checkEntities(contentToAnalyze);
+
+    // ─── Step 3: Scam pattern matching ───
+    const patternMatches = matchScamPatterns(contentToAnalyze);
+
+    // ─── Step 4: Build enriched prompt with ground truth ───
+    let groundTruth = "";
+
+    if (urlResults.length > 0) {
+      groundTruth += "\n\n=== KẾT QUẢ KIỂM TRA URL ===\n";
+      for (const u of urlResults) {
+        groundTruth += `URL: ${u.url}\n  Đáng ngờ: ${u.suspicious ? "CÓ" : "KHÔNG"}\n  Chi tiết: ${u.reasons.join("; ")}\n`;
+      }
+    }
+
+    if (entityResults.length > 0) {
+      groundTruth += "\n=== TỔ CHỨC/THƯƠNG HIỆU ĐƯỢC NHẮC ĐẾN ===\n";
+      for (const e of entityResults) {
+        groundTruth += `Danh mục: ${e.category} — Tìm thấy: ${e.found.join(", ")} (Đã xác minh là tổ chức thật tại VN 2026)\n`;
+      }
+    }
+
+    if (patternMatches.length > 0) {
+      groundTruth += "\n=== MẪU LỪA ĐẢO KHỚP TỪ CƠ SỞ DỮ LIỆU ===\n";
+      for (const p of patternMatches) {
+        groundTruth += `Mẫu: ${p.name} (Độ nguy hiểm: ${p.risk_weight}%)\n  Từ khóa khớp: ${p.matchedKeywords.join(", ")}\n  Mô tả: ${p.description}\n`;
+      }
+    }
+
+    const systemPrompt = `Bạn là chuyên gia an ninh mạng tại Việt Nam, phân tích nội dung trong bối cảnh năm 2026, thị trường Việt Nam.
+
+Bạn được cung cấp kết quả xác minh thực tế từ các nguồn dữ liệu bên ngoài:
+- Kết quả kiểm tra an toàn URL (domain đáng ngờ, typosquatting, link rút gọn)
+- Kết quả đối chiếu tổ chức/thương hiệu với CSDL tổ chức thật tại VN 2026
+- Kết quả so khớp với CSDL mẫu lừa đảo thực tế từ người dùng VN
+
+SỬ DỤNG DỮ LIỆU NÀY LÀM CƠ SỞ TRƯỚC KHI ĐƯA RA KẾT LUẬN. Nếu nội dung nhắc đến tổ chức thật nhưng URL không khớp domain chính thức → khả năng giả mạo cao.
 
 BẮT BUỘC trả về:
-- scamPercent: số nguyên từ 0 đến 100 (xác suất lừa đảo)
-- riskLevel: dựa trên scamPercent:
-  0-30: "SAFE"
-  31-70: "SUSPICIOUS"  
-  71-100: "SCAM"
+- scamPercent: số nguyên từ 0 đến 100
+- riskLevel: SAFE (0-30), SUSPICIOUS (31-70), SCAM (71-100)
 
-LƯU Ý QUAN TRỌNG:
-- Nội dung này có thể được trích xuất từ ảnh bằng OCR nên có thể còn lỗi ký tự. Hãy đọc theo ngữ cảnh.
-- Các dấu hiệu lừa đảo phổ biến: yêu cầu mật khẩu, OTP, chuyển tiền, link lạ, tạo khẩn cấp giả.
+LƯU Ý:
+- Nội dung có thể trích xuất từ ảnh OCR nên có thể còn lỗi ký tự.
+- Kết hợp phân tích ngữ cảnh + dữ liệu xác minh để đánh giá chính xác nhất.
 
-Trả lời theo format JSON (không có markdown code block):
+Trả lời JSON (không markdown code block):
 {
-  "scamPercent": <number 0-100>,
+  "scamPercent": <0-100>,
   "riskLevel": "SAFE" | "SUSPICIOUS" | "SCAM",
-  "explanation": "giải thích chi tiết bằng tiếng Việt",
-  "dangerousPhrases": ["cụm từ nguy hiểm 1", "cụm từ nguy hiểm 2"],
-  "advice": "lời khuyên cho người dùng bằng tiếng Việt"
+  "explanation": "giải thích chi tiết bằng tiếng Việt, nêu rõ lý do dựa trên dữ liệu xác minh",
+  "dangerousPhrases": ["cụm từ nguy hiểm 1", "cụm từ 2"],
+  "advice": "lời khuyên cụ thể cho người dùng bằng tiếng Việt",
+  "verificationSummary": "tóm tắt kết quả xác minh URL, tổ chức, mẫu lừa đảo"
 }`;
 
-    const messages: any[] = [{ role: "system", content: systemPrompt }];
-    messages.push({ role: "user", content: `Phân tích nội dung sau:\n\n${analysisInput}` });
+    const userMessage = `Phân tích nội dung sau:
+
+${contentToAnalyze}
+${groundTruth}`;
 
     const aiResponse = await fetch(aiUrl, {
       method: "POST",
       headers: aiHeaders,
-      body: JSON.stringify({ model: "google/gemini-3-flash-preview", messages }),
+      body: JSON.stringify({
+        model: "google/gemini-3-flash-preview",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userMessage },
+        ],
+      }),
     });
 
     if (!aiResponse.ok) {
@@ -136,36 +256,37 @@ Trả lời theo format JSON (không có markdown code block):
     const aiData = await aiResponse.json();
     const rawContent = aiData.choices?.[0]?.message?.content || "";
 
+    // ─── Step 5: Parse result ───
     let result;
     try {
       const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
       result = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
-    } catch {
-      result = null;
-    }
+    } catch { result = null; }
 
     if (!result) {
       result = {
-        scamPercent: 50,
-        riskLevel: "SUSPICIOUS",
-        explanation: rawContent,
-        dangerousPhrases: [],
+        scamPercent: 50, riskLevel: "SUSPICIOUS",
+        explanation: rawContent, dangerousPhrases: [],
         advice: "Hãy cẩn thận với nội dung này.",
       };
     }
 
-    // Ensure scamPercent exists
     if (typeof result.scamPercent !== "number") {
       result.scamPercent = result.riskLevel === "SCAM" ? 85 : result.riskLevel === "SUSPICIOUS" ? 55 : 15;
     }
-    // Ensure riskLevel matches scamPercent
     if (result.scamPercent <= 30) result.riskLevel = "SAFE";
     else if (result.scamPercent <= 70) result.riskLevel = "SUSPICIOUS";
     else result.riskLevel = "SCAM";
 
     if (extractedText) result.extractedText = extractedText;
 
-    // Save to scans table
+    // Add verification metadata
+    result.urlsChecked = urlResults.length;
+    result.suspiciousUrls = suspiciousUrls.map((u) => ({ url: u.url, reasons: u.reasons }));
+    result.entitiesMentioned = entityResults;
+    result.scamPatternsMatched = patternMatches.map((p) => ({ name: p.name, risk: p.risk_weight, keywords: p.matchedKeywords }));
+
+    // ─── Step 6: Save to DB ───
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
@@ -197,7 +318,6 @@ Trả lời theo format JSON (không có markdown code block):
       dangerous_phrases: result.dangerousPhrases || [],
     });
 
-    // Save to mailguard_logs
     await supabaseAdmin.from("mailguard_logs").insert({
       session_id: sessionId || crypto.randomUUID(),
       user_id: userId || null,
