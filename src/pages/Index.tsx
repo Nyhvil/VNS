@@ -17,6 +17,11 @@ interface AnalysisResponse {
   dangerousPhrases: string[];
   advice: string;
   extractedText?: string;
+  verificationSummary?: string;
+  urlsChecked?: number;
+  suspiciousUrls?: { url: string; reasons: string[] }[];
+  entitiesMentioned?: { found: string[]; category: string; verified: boolean }[];
+  scamPatternsMatched?: { name: string; risk: number; keywords: string[] }[];
 }
 
 const Index = () => {
