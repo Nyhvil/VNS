@@ -19,6 +19,7 @@ interface AnalysisRow {
   email_content: string;
   risk_percentage: number;
   explanation: string;
+  feedback?: string;
 }
 
 const AdminDashboard = () => {
@@ -122,6 +123,7 @@ const AdminDashboard = () => {
                     <TableHead>Session ID</TableHead>
                     <TableHead>Nội dung email</TableHead>
                     <TableHead className="text-right">Rủi ro</TableHead>
+                    <TableHead className="text-center">Phản hồi người dùng</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -149,6 +151,22 @@ const AdminDashboard = () => {
                         >
                           {row.risk_percentage}%
                         </Badge>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {row.feedback ? (
+                          <Badge
+                            variant="outline"
+                            className={
+                              row.feedback === "correct"
+                                ? "bg-green-500/20 text-green-500 border-green-500/30"
+                                : "bg-red-500/20 text-red-500 border-red-500/30"
+                            }
+                          >
+                            {row.feedback === "correct" ? "Thích" : "Không thích"}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">Chưa phản hồi</span>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
