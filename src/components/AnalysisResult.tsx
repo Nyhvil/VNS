@@ -204,15 +204,15 @@ const AnalysisResult = ({ riskLevel, scamPercent, explanation, dangerousPhrases,
             </div>
           ) : (
             <div className="space-y-2">
-              <p className="text-sm font-medium text-foreground">Kết quả phân tích có chính xác không?</p>
+              <p className="text-sm font-medium text-foreground">Bạn có thấy kết quả hữu ích?</p>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={() => handleFeedback("correct")}
                   className="gap-1.5">
-                  <ThumbsUp className="h-4 w-4" /> Chính xác
+                  <ThumbsUp className="h-4 w-4" /> Thích
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => handleFeedback("incorrect")}
                   className="gap-1.5">
-                  <ThumbsDown className="h-4 w-4" /> Không chính xác
+                  <ThumbsDown className="h-4 w-4" /> Không thích
                 </Button>
               </div>
             </div>
