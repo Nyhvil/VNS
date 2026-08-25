@@ -93,7 +93,7 @@ const Admin = () => {
               onKeyDown={(e) => e.key === "Enter" && handleLogin()} />
             {error && <p className="text-sm text-red-500">{error}</p>}
             <Button onClick={handleLogin} disabled={!password || loading}
-              className="w-full bg-brand text-foreground hover:bg-brand-hover">
+              className="w-full bg-brand text-brand-foreground hover:bg-brand-hover">
               {loading ? <Loader2 className="animate-spin" /> : "Đăng nhập"}
             </Button>
           </CardContent>

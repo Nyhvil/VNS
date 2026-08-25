@@ -110,7 +110,7 @@ const Index = () => {
             />
             <div className="flex gap-2">
               <Button onClick={handleAnalyze} disabled={!hasInput || isAnalyzing}
-                className="flex-1 bg-brand text-foreground font-semibold hover:bg-brand-hover transition-colors h-12 text-base">
+                className="flex-1 bg-brand text-brand-foreground font-semibold hover:bg-brand-hover transition-colors h-12 text-base">
                 {isAnalyzing ? (<><Loader2 className="animate-spin" />Đang phân tích...</>) : (<><Shield className="h-5 w-5" />Phân Tích Ngay</>)}
               </Button>
               {(emailContent || imageBase64 || result) && (
