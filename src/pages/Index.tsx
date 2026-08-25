@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Shield, Mail, Loader2 } from "lucide-react";
+import { Shield, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { generateSessionId, getUserId } from "@/lib/scamAnalyzer";
 import ImageUpload from "@/components/ImageUpload";
@@ -76,12 +76,12 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
         <div className="container mx-auto flex items-center gap-3 px-4 py-4">
-          <div className="relative">
-            <Shield className="h-8 w-8 text-brand" />
-            <Mail className="absolute -bottom-1 -right-1 h-4 w-4 text-foreground" />
-          </div>
-          <h1 className="text-2xl font-bold">
-            <span className="text-brand">VnS</span>
+          <h1 className="flex items-baseline gap-2 font-bold">
+            <span className="text-2xl text-brand tracking-tight">VnS</span>
+            <span className="text-muted-foreground">|</span>
+            <span className="text-sm font-semibold uppercase tracking-wider text-foreground">
+              Vietnam Safe
+            </span>
           </h1>
           <Badge variant="secondary" className="ml-2 text-xs">AI-Powered</Badge>
         </div>
