@@ -9,6 +9,7 @@ import { generateSessionId, getUserId } from "@/lib/scamAnalyzer";
 import ImageUpload from "@/components/ImageUpload";
 import AnalysisResult from "@/components/AnalysisResult";
 import { useToast } from "@/hooks/use-toast";
+import vnsLogo from "@/assets/vns-logo.png";
 
 interface AnalysisResponse {
   riskLevel: string;
@@ -75,13 +76,9 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
-        <div className="container mx-auto flex items-center gap-3 px-4 py-4">
-          <h1 className="flex items-baseline gap-2 font-bold">
-            <span className="text-2xl text-brand tracking-tight">VnS</span>
-            <span className="text-muted-foreground">|</span>
-            <span className="text-sm font-semibold uppercase tracking-wider text-foreground">
-              Vietnam Safe
-            </span>
+        <div className="container mx-auto flex items-center gap-3 px-4 py-3">
+          <h1>
+            <img src={vnsLogo} alt="VnS – Vietnam Safe" className="h-12 w-auto" />
           </h1>
           <Badge variant="secondary" className="ml-2 text-xs">AI-Powered</Badge>
         </div>
