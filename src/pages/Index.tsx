@@ -136,7 +136,7 @@ const Index = () => {
         )}
 
         <p className="text-center text-xs text-muted-foreground pb-8">
-          © 2026 MailGuard — Công cụ phát hiện lừa đảo cho người Việt
+          © 2026 VnS – VIETNAM SAFE
         </p>
       </main>
     </div>
