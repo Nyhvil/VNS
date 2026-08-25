@@ -84,7 +84,7 @@ const Admin = () => {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Card className="w-full max-w-sm">
           <CardHeader className="text-center">
-            <Lock className="h-10 w-10 mx-auto text-yellow-500 mb-2" />
+            <Lock className="h-10 w-10 mx-auto text-brand mb-2" />
             <CardTitle>Admin Access</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -93,7 +93,7 @@ const Admin = () => {
               onKeyDown={(e) => e.key === "Enter" && handleLogin()} />
             {error && <p className="text-sm text-red-500">{error}</p>}
             <Button onClick={handleLogin} disabled={!password || loading}
-              className="w-full bg-yellow-500 text-foreground hover:bg-yellow-400">
+              className="w-full bg-brand text-foreground hover:bg-brand-hover">
               {loading ? <Loader2 className="animate-spin" /> : "Đăng nhập"}
             </Button>
           </CardContent>
@@ -106,8 +106,8 @@ const Admin = () => {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
         <div className="container mx-auto flex items-center gap-3 px-4 py-4">
-          <Shield className="h-6 w-6 text-yellow-500" />
-          <h1 className="text-xl font-bold text-foreground">MailGuard Admin</h1>
+          <Shield className="h-6 w-6 text-brand" />
+          <h1 className="text-xl font-bold text-foreground">VnS Admin</h1>
         </div>
       </header>
 
@@ -134,7 +134,7 @@ const Admin = () => {
           </Card>
           <Card>
             <CardContent className="flex items-center gap-3 pt-6">
-              <BarChart3 className="h-8 w-8 text-yellow-500 shrink-0" />
+              <BarChart3 className="h-8 w-8 text-brand shrink-0" />
               <div>
                 <p className="text-xs text-muted-foreground">Tổng lượt</p>
                 <p className="text-2xl font-bold text-foreground">{stats?.totalAnalyses ?? 0}</p>
