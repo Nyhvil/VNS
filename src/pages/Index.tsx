@@ -89,7 +89,7 @@ const Index = () => {
 
       <main className="container mx-auto max-w-3xl px-4 py-8 space-y-6">
         <div className="text-center space-y-2">
-          <h2 className="text-xl font-semibold text-foreground">Phát hiện lừa đảo bằng AI</h2>
+          <h2 className="text-xl font-semibold text-foreground">BẢO VỆ NIỀM TIN TRÊN KHÔNG GIAN SỐ</h2>
           <p className="text-muted-foreground text-sm">Dán nội dung thông tin hoặc tải ảnh chụp màn hình để kiểm tra mức độ rủi ro</p>
         </div>
 
