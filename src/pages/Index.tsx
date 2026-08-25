@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Shield, Mail, Loader2 } from "lucide-react";
+import { Shield, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { generateSessionId, getUserId } from "@/lib/scamAnalyzer";
 import ImageUpload from "@/components/ImageUpload";
