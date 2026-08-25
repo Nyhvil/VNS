@@ -81,8 +81,7 @@ const Index = () => {
             <Mail className="absolute -bottom-1 -right-1 h-4 w-4 text-foreground" />
           </div>
           <h1 className="text-2xl font-bold">
-            <span className="text-foreground">Mail</span>
-            <span className="text-brand">Guard</span>
+            <span className="text-brand">VnS</span>
           </h1>
           <Badge variant="secondary" className="ml-2 text-xs">AI-Powered</Badge>
         </div>
