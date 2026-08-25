@@ -77,12 +77,11 @@ const Index = () => {
       <header className="border-b border-border bg-card">
         <div className="container mx-auto flex items-center gap-3 px-4 py-4">
           <div className="relative">
-            <Shield className="h-8 w-8 text-yellow-500" />
+            <Shield className="h-8 w-8 text-brand" />
             <Mail className="absolute -bottom-1 -right-1 h-4 w-4 text-foreground" />
           </div>
           <h1 className="text-2xl font-bold">
-            <span className="text-foreground">Mail</span>
-            <span className="text-yellow-500">Guard</span>
+            <span className="text-brand">VnS</span>
           </h1>
           <Badge variant="secondary" className="ml-2 text-xs">AI-Powered</Badge>
         </div>
@@ -110,7 +109,7 @@ const Index = () => {
             />
             <div className="flex gap-2">
               <Button onClick={handleAnalyze} disabled={!hasInput || isAnalyzing}
-                className="flex-1 bg-yellow-500 text-foreground font-semibold hover:bg-yellow-400 transition-colors h-12 text-base">
+                className="flex-1 bg-brand text-brand-foreground font-semibold hover:bg-brand-hover transition-colors h-12 text-base">
                 {isAnalyzing ? (<><Loader2 className="animate-spin" />Đang phân tích...</>) : (<><Shield className="h-5 w-5" />Phân Tích Ngay</>)}
               </Button>
               {(emailContent || imageBase64 || result) && (
@@ -137,7 +136,7 @@ const Index = () => {
         )}
 
         <p className="text-center text-xs text-muted-foreground pb-8">
-          © 2026 MailGuard — Công cụ phát hiện lừa đảo cho người Việt
+          © 2026 VnS – VIETNAM SAFE
         </p>
       </main>
     </div>

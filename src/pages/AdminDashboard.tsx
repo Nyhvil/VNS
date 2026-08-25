@@ -56,9 +56,9 @@ const AdminDashboard = () => {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
         <div className="container mx-auto flex items-center gap-3 px-4 py-4">
-          <Shield className="h-6 w-6 text-yellow-500" />
+          <Shield className="h-6 w-6 text-brand" />
           <h1 className="text-xl font-bold text-foreground">
-            MailGuard Admin
+            VnS Admin
           </h1>
         </div>
       </header>
@@ -79,7 +79,7 @@ const AdminDashboard = () => {
           </Card>
           <Card>
             <CardContent className="flex items-center gap-4 pt-6">
-              <BarChart3 className="h-10 w-10 text-yellow-500" />
+              <BarChart3 className="h-10 w-10 text-brand" />
               <div>
                 <p className="text-sm text-muted-foreground">
                   Tổng lượt phân tích
