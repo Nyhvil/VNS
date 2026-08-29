@@ -93,7 +93,7 @@ const Index = () => {
         <Card>
           <CardContent className="pt-6 space-y-4">
             <Textarea
-              placeholder="Dán nội dung email/tin nhắn cần kiểm tra vào đây..."
+              placeholder="Dán nội dung thông tin/ tin nhắn cần kiểm tra vào đây"
               className="min-h-[140px] resize-none text-sm"
               value={emailContent}
               onChange={(e) => setEmailContent(e.target.value)}
