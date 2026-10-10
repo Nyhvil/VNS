@@ -1,0 +1,133 @@
+{
+  "description": "Mẫu tin nhắn lừa đảo tiêu biểu tại Việt Nam, soạn theo 16 hình thức trong vietnam_scam_patterns.json. Dùng để nạp sẵn vào kho mẫu Qdrant (npm run seed).",
+  "samples": [
+    {
+      "pattern": "fake_bank_otp",
+      "text": "Ngân hàng thông báo: tài khoản của quý khách bị khóa do đăng nhập bất thường. Vui lòng xác minh tài khoản tại http://vietcombank-xacminh.top và nhập mã OTP để mở khóa trong vòng 24h."
+    },
+    {
+      "pattern": "fake_bank_otp",
+      "text": "Tai khoan cua quy khach da bi dong bang do nghi ngo gian lan. De mo khoa, vui long cung cap ma xac thuc OTP vua gui ve dien thoai cho nhan vien ho tro."
+    },
+    {
+      "pattern": "fake_bank_otp",
+      "text": "Chào anh/chị, em là nhân viên ngân hàng. Hệ thống ghi nhận giao dịch trừ 12.500.000đ. Nếu không phải anh/chị thực hiện, vui lòng đọc mã OTP để em hủy giao dịch ngay."
+    },
+    {
+      "pattern": "fake_police",
+      "text": "Tôi là cán bộ điều tra Công an thành phố. Anh/chị có liên quan đến vụ án rửa tiền và ma túy. Yêu cầu chuyển toàn bộ tiền vào tài khoản tạm giữ để phục vụ điều tra, nếu không sẽ có lệnh bắt."
+    },
+    {
+      "pattern": "fake_police",
+      "text": "Thông báo triệu tập: căn cước của bạn bị dùng để mở tài khoản liên quan đến vụ án lừa đảo. Giữ bí mật, kết bạn Zalo với cán bộ điều tra để làm việc trực tuyến và kê khai tài sản."
+    },
+    {
+      "pattern": "fake_prize",
+      "text": "Chúc mừng bạn đã trúng thưởng xe máy SH và 50 triệu đồng trong chương trình quay số tri ân. Để nhận thưởng, vui lòng chuyển 2 triệu phí hồ sơ và thuế trước 17h hôm nay."
+    },
+    {
+      "pattern": "fake_prize",
+      "text": "Ban la khach hang may man nhan giai thuong iPhone 16 Pro Max. Nhan vao link de xac nhan thong tin nhan thuong: http://nhanthuong-tri-an.xyz"
+    },
+    {
+      "pattern": "fake_job",
+      "text": "Tuyển cộng tác viên việc nhẹ lương cao, làm việc tại nhà, không cần kinh nghiệm. Chỉ cần like và đặt đơn hàng ảo, hoa hồng cao 300-800k/ngày. Đặt cọc 500k để nhận nhiệm vụ đầu tiên."
+    },
+    {
+      "pattern": "fake_job",
+      "text": "Shopee tuyển nhân viên chốt đơn online, thu nhập thụ động 15-30 triệu/tháng. Nạp tiền làm nhiệm vụ nhận lại gốc và hoa hồng 20%. Liên hệ Telegram để được hướng dẫn, phí đăng ký 200k."
+    },
+    {
+      "pattern": "phishing_link",
+      "text": "Tài khoản của bạn sẽ bị khóa. Nhấn vào đây để cập nhật thông tin và đăng nhập lại ngay: http://45.77.12.9/login. Xác nhận ngay để tránh gián đoạn dịch vụ."
+    },
+    {
+      "pattern": "phishing_link",
+      "text": "Apple ID cua ban vua dang nhap tren thiet bi la. Click vao link sau de xac nhan ngay va cap nhat thong tin bao mat: https://bit.ly/3xApple-id"
+    },
+    {
+      "pattern": "romance_scam",
+      "text": "Anh đang công tác ở nước ngoài, gửi cho em một kiện quà từ nước ngoài gồm trang sức và tiền mặt. Hải quan đang giữ hàng, em chuyển giúp anh 15 triệu phí hải quan rồi anh gửi lại ngay nhé."
+    },
+    {
+      "pattern": "romance_scam",
+      "text": "Em yêu, anh là kỹ sư dầu khí ở nước ngoài, tài khoản đang bị phong tỏa. Em gửi tiền giúp anh mua vé máy bay về Việt Nam cưới em, anh sẽ trả gấp đôi."
+    },
+    {
+      "pattern": "investment_scam",
+      "text": "Sàn giao dịch forex quốc tế, đầu tư sinh lời 3-5% mỗi ngày, lợi nhuận cam kết bằng hợp đồng. Chuyên gia đọc lệnh, nạp 5 triệu nhân đôi tài khoản sau 7 ngày. Tham gia nhóm Telegram ngay."
+    },
+    {
+      "pattern": "investment_scam",
+      "text": "Du an tien ao moi niem yet, lai suat cao 30%/thang, x2 x3 tai khoan trong 1 thang. Nap von cang som loi nhuan cang lon, rut tien bat cu luc nao."
+    },
+    {
+      "pattern": "fake_shipping",
+      "text": "Bưu phẩm của bạn giao hàng thất bại do sai địa chỉ. Vui lòng thanh toán phí vận chuyển 15.000đ và xác nhận nhận hàng tại http://giaohang-nhanh.click để được giao lại."
+    },
+    {
+      "pattern": "fake_shipping",
+      "text": "Shipper day a, don hang COD 329k cua chi em de o cong roi. Chi chuyen khoan giup em vao so tai khoan nay nhe, em gui link xac nhan nhan hang."
+    },
+    {
+      "pattern": "loan_scam",
+      "text": "Vay nhanh 50 triệu, duyệt ngay trong 5 phút, không cần thế chấp, nợ xấu vẫn vay được. Để giải ngân nhanh vui lòng đóng trước phí bảo hiểm khoản vay 1,5 triệu."
+    },
+    {
+      "pattern": "loan_scam",
+      "text": "Ho so vay cua ban da duoc duyet 80 trieu. Do nhap sai so tai khoan nen tien bi dong bang, vui long nop 5 trieu phi mo tai khoan de nhan giai ngan."
+    },
+    {
+      "pattern": "sim_swap",
+      "text": "Nhà mạng thông báo: SIM của quý khách sắp hết hạn SIM 4G và sẽ bị khóa SIM. Soạn tin theo cú pháp và cung cấp mã gửi về máy để nâng cấp SIM 5G miễn phí."
+    },
+    {
+      "pattern": "sim_swap",
+      "text": "Em la nhan vien nha mang, ho tro nang cap SIM 4G len 5G tu xa. Anh chi doc giup em ma OTP vua nhan duoc de hoan tat nang cap, khong can ra cua hang."
+    },
+    {
+      "pattern": "fake_tax",
+      "text": "Tổng cục Thuế thông báo: bạn được hoàn thuế thu nhập cá nhân 3.250.000đ. Vui lòng cài ứng dụng eTax tại link sau và nhập mã số thuế, thông tin thẻ để nhận tiền hoàn thuế."
+    },
+    {
+      "pattern": "fake_tax",
+      "text": "Chi cuc thue thong bao doanh nghiep cua anh chi dang no thue va cham quyet toan thue. Ket ban Zalo voi can bo thue de duoc huong dan cai phan mem ke khai."
+    },
+    {
+      "pattern": "social_engineering",
+      "text": "Em ơi giúp anh với, tài khoản anh đang bị lỗi không chuyển được. Em chuyển giúp anh 20 triệu vào số tài khoản này, gấp lắm, mai anh gửi lại. Đừng gọi, anh đang họp."
+    },
+    {
+      "pattern": "social_engineering",
+      "text": "Chi oi tai khoan Facebook cua em bi hack, em dang can gap. Chi cho em muon tien 5 trieu chuyen qua so nay giup em, toi em tra lai ngay."
+    },
+    {
+      "pattern": "fake_charity",
+      "text": "Kêu gọi quyên góp từ thiện giúp đỡ bé bị bệnh nặng, hoàn cảnh khó khăn, cần 200 triệu mổ gấp. Mọi cứu trợ xin chuyển về số tài khoản cá nhân sau, xin chia sẻ rộng rãi."
+    },
+    {
+      "pattern": "vneid_scam",
+      "text": "Công an phường thông báo tài khoản VNeID của bạn chưa định danh mức độ 2. Vui lòng tải ứng dụng tại link sau, nhập số CCCD và xác thực sinh trắc khuôn mặt để tránh bị khóa."
+    },
+    {
+      "pattern": "vneid_scam",
+      "text": "Can bo cong an huong dan cai dat VNeID va tich hop can cuoc qua mang. Anh chi cai app theo link, cap quyen tro nang va quet khuon mat de hoan tat dinh danh muc do 2."
+    },
+    {
+      "pattern": "qr_scam",
+      "text": "Quét mã QR dưới đây để nhận hoàn tiền 500.000đ từ chương trình khuyến mãi. Sau khi scan QR, nhập thông tin thẻ và mã OTP để xác nhận thanh toán QR hoàn tiền."
+    },
+    {
+      "pattern": "qr_scam",
+      "text": "Bien lai chuyen khoan loi, anh chi quet ma QR nay de nhan lai tien. Chuyen tien qua QR xong vui long gui ma giao dich cho em."
+    },
+    {
+      "pattern": "urgency_pressure",
+      "text": "KHẨN CẤP: tài khoản của bạn sẽ bị khóa vĩnh viễn nếu không xác minh trong vòng 24h. Thực hiện ngay lập tức để tránh bị phạt và mất quyền truy cập."
+    },
+    {
+      "pattern": "urgency_pressure",
+      "text": "Canh bao lan cuoi: dich vu se het han hom nay. Thanh toan ngay lap tuc neu khong se bi phat va bi khoa vinh vien."
+    }
+  ]
+}
