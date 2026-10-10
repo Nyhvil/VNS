@@ -1,5 +1,7 @@
 # MailGuard - Git Workflow (Mô hình 4 Branch)
 
+> Cách cài đặt và chạy dự án trên máy: xem [HUONG_DAN_CHAY.md](HUONG_DAN_CHAY.md).
+
 Dự án sử dụng mô hình nhiều branch trong cùng một repository:
 
 - `main`: code ổn định, dùng cho production, không commit trực tiếp
