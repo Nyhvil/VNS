@@ -62,8 +62,9 @@ const configSchema = z.object({
   ragCandidateK: z.coerce.number().int().min(1).max(100).default(20),
   rerankEnabled: envBoolean(true),
 
-  // OCR
-  tesseractLangs: z.string().default('eng'),
+  // OCR. The language files for Vietnamese and English ship with the
+  // pipeline (vie.traineddata, eng.traineddata), so no download is needed.
+  tesseractLangs: z.string().default('vie+eng'),
 
   // Redis (queue + shared cache). Without it everything runs in-process.
   redisUrl: z.string().optional(),
@@ -76,6 +77,25 @@ const configSchema = z.object({
   cacheEnabled: envBoolean(true),
   cacheTtlMs: z.coerce.number().int().positive().default(300000),
   cacheMaxSize: z.coerce.number().int().positive().default(1000),
+
+  // Standalone web server: this process also serves the web app and its
+  // backend (/functions/v1/*), with no Supabase project. Off by default,
+  // because those addresses answer without the API key.
+  webEnabled: envBoolean(false),
+  // Folder with the built web app (npm run build:standalone in the repo root).
+  webDistDir: z.string().optional(),
+  adminPassword: z.string().optional(),
+  // PostgreSQL connection string. Without it the data goes to files in dataDir.
+  databaseUrl: z.string().optional(),
+  databaseSsl: z.enum(['auto', 'require', 'verify', 'disable']).default('auto'),
+  dataDir: z.string().default('./var'),
+  storeImages: envBoolean(true),
+  // Number of proxies in front of this server; decides which address the
+  // rate limit counts. 0 = reached directly.
+  trustedProxyHops: z.coerce.number().int().min(0).max(10).default(0),
+  rateLimitPerIp: z.coerce.number().int().min(1).default(20),
+  rateLimitWindowMs: z.coerce.number().int().positive().default(300000),
+  rateLimitGlobalPerMinute: z.coerce.number().int().min(0).default(60),
 });
 
 export type Config = z.infer<typeof configSchema>;
@@ -90,7 +110,8 @@ function loadConfig(): Config {
   const llmProvider = emptyToUndefined(process.env['LLM_PROVIDER']);
 
   const raw = {
-    port: process.env['PIPELINE_PORT'],
+    // PORT is what hosting platforms set.
+    port: emptyToUndefined(process.env['PIPELINE_PORT']) ?? emptyToUndefined(process.env['PORT']),
     apiKey: process.env['PIPELINE_API_KEY'] ?? '',
     allowedIps: process.env['PIPELINE_ALLOWED_IPS'],
     logLevel: process.env['LOG_LEVEL'],
@@ -132,6 +153,17 @@ function loadConfig(): Config {
     cacheEnabled: process.env['CACHE_ENABLED'],
     cacheTtlMs: process.env['CACHE_TTL_MS'],
     cacheMaxSize: process.env['CACHE_MAX_SIZE'],
+    webEnabled: process.env['WEB_ENABLED'],
+    webDistDir: emptyToUndefined(process.env['WEB_DIST_DIR']),
+    adminPassword: emptyToUndefined(process.env['ADMIN_PASSWORD']),
+    databaseUrl: emptyToUndefined(process.env['DATABASE_URL']),
+    databaseSsl: emptyToUndefined(process.env['DATABASE_SSL']),
+    dataDir: emptyToUndefined(process.env['DATA_DIR']),
+    storeImages: process.env['STORE_IMAGES'],
+    trustedProxyHops: emptyToUndefined(process.env['TRUSTED_PROXY_HOPS']),
+    rateLimitPerIp: emptyToUndefined(process.env['RATE_LIMIT_PER_IP']),
+    rateLimitWindowMs: emptyToUndefined(process.env['RATE_LIMIT_WINDOW_MS']),
+    rateLimitGlobalPerMinute: emptyToUndefined(process.env['RATE_LIMIT_GLOBAL_PER_MINUTE']),
   };
 
   const result = configSchema.safeParse(raw);

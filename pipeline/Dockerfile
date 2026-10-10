@@ -11,7 +11,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
-COPY package.json eng.traineddata ./
+COPY package.json eng.traineddata vie.traineddata ./
 COPY data ./data
 EXPOSE 3001
 CMD ["node", "dist/main.js"]

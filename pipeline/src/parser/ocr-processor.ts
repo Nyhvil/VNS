@@ -133,7 +133,7 @@ async function extractTextWithTesseract(imageBase64: string): Promise<OcrResult>
     const Tesseract = await import('tesseract.js');
     const buffer = Buffer.from(cleanBase64, 'base64');
 
-    const result = await Tesseract.recognize(buffer, getConfig().tesseractLangs ?? 'eng');
+    const result = await Tesseract.recognize(buffer, getConfig().tesseractLangs ?? 'vie+eng');
     const text = result.data && typeof result.data.text === 'string' ? result.data.text.trim() : '';
     const success = text.length > 0;
 

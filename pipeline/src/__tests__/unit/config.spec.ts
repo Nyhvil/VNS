@@ -24,6 +24,7 @@ describe('Config', () => {
     it('should use default port 3001 when PIPELINE_PORT is not set', () => {
       process.env['PIPELINE_API_KEY'] = 'test-key';
       delete process.env['PIPELINE_PORT'];
+      delete process.env['PORT'];
       const config = getConfig();
       expect(config.port).toBe(3001);
     });
@@ -126,6 +127,83 @@ describe('Config', () => {
     it('should throw when PIPELINE_API_KEY is empty string', () => {
       process.env['PIPELINE_API_KEY'] = '';
       expect(() => getConfig()).toThrow('Configuration validation failed');
+    });
+  });
+
+  describe('standalone web server settings', () => {
+    const WEB_VARIABLES = [
+      'WEB_ENABLED', 'WEB_DIST_DIR', 'ADMIN_PASSWORD', 'DATABASE_URL', 'DATABASE_SSL', 'DATA_DIR',
+      'STORE_IMAGES', 'TRUSTED_PROXY_HOPS', 'RATE_LIMIT_PER_IP', 'RATE_LIMIT_WINDOW_MS',
+      'RATE_LIMIT_GLOBAL_PER_MINUTE', 'PORT', 'PIPELINE_PORT', 'TESSERACT_LANGS',
+    ];
+
+    beforeEach(() => {
+      process.env['PIPELINE_API_KEY'] = 'test-key';
+      for (const name of WEB_VARIABLES) delete process.env[name];
+    });
+
+    it('should keep web mode off unless asked for', () => {
+      expect(getConfig()).toMatchObject({
+        webEnabled: false,
+        storeImages: true,
+        databaseSsl: 'auto',
+        dataDir: './var',
+        trustedProxyHops: 0,
+        rateLimitPerIp: 20,
+        rateLimitWindowMs: 300000,
+        rateLimitGlobalPerMinute: 60,
+      });
+      expect(getConfig().adminPassword).toBeUndefined();
+      expect(getConfig().databaseUrl).toBeUndefined();
+    });
+
+    it('should read the web settings from the environment', () => {
+      process.env['WEB_ENABLED'] = 'true';
+      process.env['ADMIN_PASSWORD'] = 'mật khẩu';
+      process.env['DATABASE_URL'] = 'postgres://u:p@db.example.com/vns';
+      process.env['DATABASE_SSL'] = 'verify';
+      process.env['STORE_IMAGES'] = 'false';
+      process.env['TRUSTED_PROXY_HOPS'] = '2';
+      process.env['RATE_LIMIT_PER_IP'] = '5';
+
+      expect(getConfig()).toMatchObject({
+        webEnabled: true,
+        adminPassword: 'mật khẩu',
+        databaseUrl: 'postgres://u:p@db.example.com/vns',
+        databaseSsl: 'verify',
+        storeImages: false,
+        trustedProxyHops: 2,
+        rateLimitPerIp: 5,
+      });
+    });
+
+    it('should treat variables left blank as not set', () => {
+      process.env['ADMIN_PASSWORD'] = '';
+      process.env['DATABASE_URL'] = '  ';
+      process.env['DATABASE_SSL'] = '';
+      expect(getConfig().adminPassword).toBeUndefined();
+      expect(getConfig().databaseUrl).toBeUndefined();
+      expect(getConfig().databaseSsl).toBe('auto');
+    });
+
+    it('should listen on PORT, the variable hosting platforms set', () => {
+      process.env['PORT'] = '10000';
+      expect(getConfig().port).toBe(10000);
+    });
+
+    it('should prefer PIPELINE_PORT over PORT', () => {
+      process.env['PORT'] = '10000';
+      process.env['PIPELINE_PORT'] = '4000';
+      expect(getConfig().port).toBe(4000);
+    });
+
+    it('should reject an unknown DATABASE_SSL value', () => {
+      process.env['DATABASE_SSL'] = 'maybe';
+      expect(() => getConfig()).toThrow('Configuration validation failed');
+    });
+
+    it('should read Vietnamese and English in images by default', () => {
+      expect(getConfig().tesseractLangs).toBe('vie+eng');
     });
   });
 

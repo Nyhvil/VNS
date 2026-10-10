@@ -2,7 +2,9 @@
 
 Dịch vụ Node.js + TypeScript nhận một nội dung (văn bản, email đầy đủ, ảnh) và trả về điểm rủi ro kèm căn cứ. Hàm `analyze-content` của giao diện gọi dịch vụ này khi được cấu hình; chi tiết kiến trúc và cách chấm điểm ở [docs/CONG_NGHE.md](../docs/CONG_NGHE.md).
 
-Đây là dịch vụ nội bộ: mọi đường dẫn (trừ `/pipeline/health`) đều đòi khóa `X-API-Key`.
+Đây là dịch vụ nội bộ: mọi đường dẫn `/pipeline/*` (trừ `/pipeline/health`) đều đòi khóa `X-API-Key`.
+
+Với `WEB_ENABLED=true`, dịch vụ này còn làm luôn máy chủ của cả trang web (giao diện, `/functions/v1/*`, lưu dữ liệu), không cần Supabase. Các địa chỉ đó là công khai, không đòi khóa. Xem [docs/TRIEN_KHAI.md](../docs/TRIEN_KHAI.md).
 
 ## Chạy
 
@@ -17,7 +19,7 @@ Chỉ `PIPELINE_API_KEY` là bắt buộc. Mỗi nhóm biến trong `.env.exampl
 
 | Lớp | Cần gì |
 | --- | --- |
-| Bộ luật, đọc mã QR, Tesseract | Không cần gì |
+| Bộ luật, đọc mã QR, Tesseract (tiếng Việt và tiếng Anh, tệp ngôn ngữ có sẵn) | Không cần gì |
 | RAG | Khóa embedding (`OPENAI_API_KEY`) và Qdrant; nạp mẫu bằng `npm run seed` |
 | LLM, đọc ảnh bằng mô hình thị giác, chatbot | `LLM_ENABLED=true` và khóa của nhà cung cấp (`OPENAI_API_KEY` hoặc `GEMINI_API_KEY`) |
 | Phân loại PhoBERT / DistilBERT, PaddleOCR | `ML_SERVICE_URL` trỏ tới [ml-service](../ml-service) |
@@ -65,7 +67,10 @@ Các trường chính trong kết quả:
 ```sh
 npm test
 REDIS_TEST_URL=redis://127.0.0.1:6379 npm run test:integration   # hàng đợi, cần Redis
+DATABASE_TEST_URL=postgres://user:pass@127.0.0.1:5432/vns_test npm run test:integration   # lưu dữ liệu, cần PostgreSQL
 ```
+
+Bài test với PostgreSQL xoá sạch ba bảng `scans`, `mailguard_logs`, `scan_images` của cơ sở dữ liệu được trỏ tới, nên chỉ dùng cơ sở dữ liệu tạo riêng để thử.
 
 ## Cấu trúc
 
