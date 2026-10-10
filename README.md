@@ -6,6 +6,29 @@ Công cụ dùng AI để kiểm tra một nội dung đáng ngờ (tin nhắn, 
 
 Người dùng không cần đăng nhập và không cần kiến thức về an ninh mạng: dán nội dung hoặc tải ảnh lên, bấm **Phân Tích Ngay**, rồi nhận về mức rủi ro, điểm lừa đảo và lời giải thích bằng tiếng Việt.
 
+## Vì sao cần VNS
+
+Theo khảo sát của [Hiệp hội An ninh mạng Quốc gia (NCA)](https://nhandan.vn/nca-nam-2024-uoc-tinh-nguoi-viet-mat-18900-ty-dong-do-lua-dao-truc-tuyen-post850801.html), năm 2024 người Việt mất khoảng 18.900 tỷ đồng vì lừa đảo trực tuyến, và cứ 220 người dùng điện thoại thông minh thì có 1 người là nạn nhân.
+
+Cảnh báo về lừa đảo có rất nhiều, nhưng lúc nhận được một tin nhắn lạ, người dùng phổ thông vẫn khó tự trả lời câu hỏi: "Tôi có nên tin và làm theo nội dung này không?". Tự kiểm tra thì mất thời gian và cần kiến thức về an toàn thông tin.
+
+VNS giải quyết đúng thời điểm đó, với ba khác biệt:
+
+- **Kiểm tra trước khi hành động.** Người dùng hỏi VNS trước khi bấm link, cung cấp thông tin hoặc chuyển tiền, thay vì phát hiện sau khi đã mất tiền.
+- **Nhìn vào nội dung, không chỉ đường link.** Hệ thống xét cả lời lẽ thúc ép, tổ chức bị giả danh và yêu cầu cung cấp thông tin, thay vì chỉ so link với danh sách đen.
+- **Giải thích vì sao.** Kết quả nêu rõ dấu hiệu nào đáng ngờ, để người dùng dần tự nhận ra lừa đảo.
+
+Mục tiêu dài hạn của dự án là "Protect citizens in cyberspace": hình thành thói quen kiểm tra trước khi tin.
+
+## Dành cho ai
+
+- Sinh viên và người trẻ, thường gặp tin tuyển dụng, việc làm thêm, học bổng và link không rõ nguồn gốc.
+- Nhân viên văn phòng và người hay giao dịch trực tuyến, thường nhận email hoặc tin nhắn giả danh ngân hàng, đối tác, cơ quan nhà nước.
+- Người trung niên và người lớn tuổi, cần một công cụ đơn giản, không đòi hỏi kiến thức kỹ thuật.
+- Về sau: doanh nghiệp và hộ kinh doanh cần kiểm tra lượng lớn email, tin nhắn.
+
+VNS miễn phí cho người dùng cá nhân và hoạt động theo mô hình phi lợi nhuận.
+
 ## Tính năng
 
 - Phân tích văn bản dán vào và ảnh chụp màn hình (tin nhắn Zalo, Messenger, SMS, email…).
@@ -45,6 +68,17 @@ Mỗi lượt phân tích đi qua sáu bước, tất cả nằm trong hàm `ana
 | Dữ liệu tri thức | `verified_entities_2026.json` (tổ chức và tên miền chính thức), `vietnam_scam_patterns.json` (16 mẫu lừa đảo) |
 | Kiểm thử | Vitest, Playwright |
 
+## Kết quả thử nghiệm
+
+Nhóm bắt đầu nghiên cứu từ tháng 12/2025 và đưa bản demo ra thử nghiệm thực tế từ tháng 4/2026. Số liệu tại thời điểm lập hồ sơ dự thi, lấy từ trang quản trị:
+
+| Chỉ số | Kết quả |
+| --- | --- |
+| Người dùng (đếm theo mã ẩn danh của trình duyệt) | 295 |
+| Lượt kiểm tra | 586 |
+| Số ký tự nội dung đã xử lý | 338.790 |
+| Phản hồi của người dùng về kết quả | 74 đúng, 4 sai |
+
 ## Cấu trúc thư mục
 
 ```
@@ -66,8 +100,8 @@ supabase/
 Cần Node.js 18 trở lên.
 
 ```sh
-git clone https://github.com/Nyhvil/vietnamsafe.git
-cd vietnamsafe
+git clone https://github.com/Nyhvil/VNS.git
+cd VNS
 npm install
 npm run dev
 ```
@@ -97,6 +131,9 @@ Lệnh khác: `npm run build` để build, `npm test` để chạy kiểm thử.
 - Mô hình phân loại tiếng Việt (PhoBERT / DistilBERT) chạy trước mô hình ngôn ngữ.
 - Cơ sở dữ liệu vector cho các tình huống lừa đảo thực tế, kèm tìm kiếm tương đồng và reranking.
 - Đọc mã QR và phân tích sâu nội dung website.
+- Phân tích email đầy đủ, gồm tiêu đề thư và tệp đính kèm.
+- Cơ sở dữ liệu lừa đảo do cộng đồng đóng góp, đã ẩn danh trước khi dùng để cải thiện hệ thống.
+- Thông báo rõ cho người dùng về mục đích thu thập và sử dụng dữ liệu.
 - Tiện ích mở rộng cho trình duyệt.
 - API cho doanh nghiệp.
 
@@ -104,4 +141,10 @@ Lệnh khác: `npm run build` để build, `npm test` để chạy kiểm thử.
 
 Dự án VNS – VIỆT NAM SAFE, dự thi cuộc thi GenD.
 
-[Điền tên các thành viên và thông tin liên hệ của nhóm]
+| Thành viên | Đơn vị |
+| --- | --- |
+| Nguyễn Tiến Hùng (trưởng nhóm) | Trường ĐH Văn Lang |
+| Nguyễn Ngọc Hà | Trường ĐH Kinh Tế |
+| Nguyễn Thị Thuỳ Trang | Trường ĐH Kinh Tế |
+| Huỳnh Hoàng Quân | Trường ĐH Kinh Tế |
+| Lý Trí Vĩnh | Trường ĐH Công Nghệ Kỹ Thuật |
