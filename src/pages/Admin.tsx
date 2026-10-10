@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
+import { getFunctionErrorStatus } from "@/lib/functionError";
+import { describeAdminError } from "@/lib/adminError";
 import {
   Shield, Users, BarChart3, Loader2, ImageIcon, FileText, Lock, UserCheck, RefreshCw,
   Hash, Percent, Type, ThumbsUp, ThumbsDown,
@@ -54,16 +56,16 @@ const Admin = () => {
         body: { password },
       });
       if (fnError) throw fnError;
-      if (data?.error) {
-        setError("Sai mật khẩu");
+      if (!data?.stats) {
+        setError("Máy chủ trả về dữ liệu không đúng định dạng.");
         setLoading(false);
         return;
       }
       setStats(data.stats);
       setScans(data.scans || []);
       setAuthenticated(true);
-    } catch {
-      setError("Sai mật khẩu hoặc lỗi hệ thống");
+    } catch (err) {
+      setError(describeAdminError(getFunctionErrorStatus(err)));
     }
     setLoading(false);
   };

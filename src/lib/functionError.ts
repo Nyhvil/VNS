@@ -19,3 +19,13 @@ export async function getFunctionErrorMessage(error: unknown, fallback: string):
 
   return fallback;
 }
+
+/**
+ * HTTP status of a failed supabase.functions.invoke() call, or null when the
+ * function could not be reached at all (no network, wrong address).
+ */
+export function getFunctionErrorStatus(error: unknown): number | null {
+  const context = (error as { context?: unknown } | null)?.context;
+  const status = (context as { status?: unknown } | null | undefined)?.status;
+  return typeof status === "number" ? status : null;
+}
