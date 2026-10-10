@@ -14,9 +14,17 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-    },
+    alias: [
+      // Standalone build (vite build --mode standalone): the web app is served
+      // by the VNS server in /pipeline and calls it instead of Supabase.
+      ...(mode === "standalone"
+        ? [{
+            find: "@/integrations/supabase/client",
+            replacement: path.resolve(__dirname, "./src/integrations/standalone/client.ts"),
+          }]
+        : []),
+      { find: "@", replacement: path.resolve(__dirname, "./src") },
+    ],
     dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "@tanstack/react-query", "@tanstack/query-core"],
   },
 }));

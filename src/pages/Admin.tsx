@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { getFunctionErrorStatus } from "@/lib/functionError";
+import { getFunctionErrorMessage, getFunctionErrorStatus } from "@/lib/functionError";
 import { describeAdminError } from "@/lib/adminError";
 import {
   Shield, Users, BarChart3, Loader2, ImageIcon, FileText, Lock, UserCheck, RefreshCw,
@@ -65,7 +65,9 @@ const Admin = () => {
       setScans(data.scans || []);
       setAuthenticated(true);
     } catch (err) {
-      setError(describeAdminError(getFunctionErrorStatus(err)));
+      const status = getFunctionErrorStatus(err);
+      // 503 comes with the reason (for example: no admin password set on the server).
+      setError(status === 503 ? await getFunctionErrorMessage(err, describeAdminError(status)) : describeAdminError(status));
     }
     setLoading(false);
   };
