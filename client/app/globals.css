@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f5f5f5;
+  --foreground: #191c1e;
+  --mg-surface: #f5f5f5;
+  --mg-surface-low: #f0f0f0;
+  --mg-surface-lowest: #ffffff;
+  --mg-surface-high: #ececec;
+  --mg-surface-highest: #e3e3e3;
+  --mg-surface-variant: rgba(255, 255, 255, 0.78);
+  --mg-on-surface: #191c1e;
+  --mg-on-surface-muted: #60646b;
+  --mg-on-surface-soft: #818792;
+  --mg-primary: #f2c340;
+  --mg-primary-container: #f8d96c;
+  --mg-on-primary-container: #4f3b00;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: "Inter", "Segoe UI", "Helvetica Neue", sans-serif;
+  --font-mono: "Consolas", "Courier New", monospace;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: "Inter", "Segoe UI", "Helvetica Neue", sans-serif;
+  min-height: 100vh;
+}
+a { color: inherit; text-decoration: none; }
+button { cursor: pointer; }
+button, textarea { font: inherit; }
+
+.sentinel-shell {
+  background:
+    radial-gradient(circle at top right, rgba(248, 217, 108, 0.1), transparent 30%),
+    linear-gradient(180deg, #f5f5f5 0%, #f2f2f2 100%);
+}
+
+.sentinel-card {
+  background: var(--mg-surface-lowest);
+  border: 1px solid rgba(198, 176, 128, 0.32);
+  border-radius: 12px;
+  box-shadow: 0 8px 16px rgba(20, 20, 20, 0.06);
+}
+
+.sentinel-glass {
+  background: var(--mg-surface-variant);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(184, 184, 184, 0.4);
+}
+
+.sentinel-gradient {
+  background-image: linear-gradient(135deg, #f4cb56 0%, #f8d96c 100%);
+  color: var(--mg-on-primary-container);
+}
+
+.mg-card-hover {
+  transition: transform 220ms ease, box-shadow 220ms ease;
+}
+.mg-card-hover:hover,
+.mg-card-hover:focus-within {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.1);
+}
+
+@keyframes mg-float-updown-a {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes mg-float-updown-b {
+  0%, 100% { transform: translateY(-2px); }
+  50% { transform: translateY(-12px); }
+}
+
+.mg-float-a { animation: mg-float-updown-a 2.8s ease-in-out infinite; }
+.mg-float-b { animation: mg-float-updown-b 3.2s ease-in-out infinite; }
