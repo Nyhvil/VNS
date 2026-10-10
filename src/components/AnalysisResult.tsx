@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { ShieldCheck, ShieldAlert, ShieldX, AlertTriangle, ThumbsUp, ThumbsDown, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { generateSessionId } from "@/lib/scamAnalyzer";
+import LayerBreakdown, { type PipelineInfo } from "@/components/LayerBreakdown";
+import ScamChat from "@/components/ScamChat";
 
 interface UrlCheckResult {
   url: string;
@@ -35,9 +37,13 @@ interface AnalysisResultProps {
   suspiciousUrls?: UrlCheckResult[];
   entitiesMentioned?: EntityResult[];
   scamPatternsMatched?: PatternMatch[];
+  /** Per-layer scores, present when the multi-layer pipeline produced the result. */
+  pipeline?: PipelineInfo;
+  /** The text the user submitted, used as context for follow-up questions. */
+  analyzedText?: string;
 }
 
-const AnalysisResult = ({ riskLevel, scamPercent, explanation, dangerousPhrases, advice, extractedText, verificationSummary, urlsChecked, suspiciousUrls, entitiesMentioned, scamPatternsMatched }: AnalysisResultProps) => {
+const AnalysisResult = ({ riskLevel, scamPercent, explanation, dangerousPhrases, advice, extractedText, verificationSummary, urlsChecked, suspiciousUrls, entitiesMentioned, scamPatternsMatched, pipeline, analyzedText }: AnalysisResultProps) => {
   const [feedbackSent, setFeedbackSent] = useState(false);
 
   const getConfig = (level: string) => {
@@ -114,6 +120,14 @@ const AnalysisResult = ({ riskLevel, scamPercent, explanation, dangerousPhrases,
 
         <p className="text-sm text-foreground leading-relaxed">{explanation}</p>
 
+        {advice && (
+          <div className="bg-brand/5 rounded-lg p-3 border border-brand/20">
+            <p className="text-sm text-foreground">
+              💡 <span className="font-medium">Lời khuyên:</span> {advice}
+            </p>
+          </div>
+        )}
+
         {extractedText && (
           <div className="space-y-1">
             <p className="text-xs font-medium text-muted-foreground">📝 Văn bản trích xuất từ ảnh (đã chuẩn hóa):</p>
@@ -187,6 +201,8 @@ const AnalysisResult = ({ riskLevel, scamPercent, explanation, dangerousPhrases,
           </div>
         ) : null}
 
+        {pipeline && <LayerBreakdown pipeline={pipeline} finalScore={percent} />}
+
         {verificationSummary && (
           <div className="bg-muted/50 rounded-lg p-3 border border-border">
             <p className="text-sm text-muted-foreground">
@@ -194,6 +210,11 @@ const AnalysisResult = ({ riskLevel, scamPercent, explanation, dangerousPhrases,
             </p>
           </div>
         )}
+
+        <ScamChat
+          content={extractedText || analyzedText}
+          verdict={{ riskLevel, scamPercent: percent, explanation }}
+        />
 
         {/* Feedback */}
         <div className="border-t border-border pt-4">

@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import verifiedEntities from "./verified_entities_2026.json" with { type: "json" };
 import scamPatterns from "./vietnam_scam_patterns.json" with { type: "json" };
+import { analyzeWithPipeline, getPipelineSettings } from "./pipeline-client.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -111,91 +112,79 @@ function normalizeOCRText(raw: string): string {
   return text;
 }
 
-// ─── Main handler ───
-Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+// ─── Built-in analysis: OCR + knowledge checks + Gemini ───
+// Used when the multi-layer pipeline is not configured or cannot be reached.
+// Returns the result object, or a Response when the AI gateway refuses the call.
+async function analyzeBuiltIn(text: string | null, imageBase64: string | null): Promise<Record<string, unknown> | Response> {
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+
+  const aiHeaders = { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" };
+  const aiUrl = Deno.env.get("LOVABLE_AI_GATEWAY_URL") ?? "https://ai.gateway.lovable.dev/v1/chat/completions";
+
+  // ─── OCR if image ───
+  let extractedText: string | null = null;
+  if (imageBase64) {
+    const ocrResponse = await fetch(aiUrl, {
+      method: "POST",
+      headers: aiHeaders,
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: "Bạn là công cụ OCR. Trích xuất TOÀN BỘ văn bản có trong hình ảnh, giữ nguyên bố cục. Chỉ trả về văn bản thuần, không giải thích gì thêm." },
+          { role: "user", content: [
+            { type: "text", text: "Trích xuất toàn bộ văn bản trong hình ảnh này." },
+            { type: "image_url", image_url: { url: `data:image/jpeg;base64,${imageBase64}` } },
+          ]},
+        ],
+      }),
+    });
+    if (ocrResponse.ok) {
+      const ocrData = await ocrResponse.json();
+      extractedText = normalizeOCRText(ocrData.choices?.[0]?.message?.content || "");
+    }
   }
 
-  try {
-    const { text, imageBase64, sessionId, userId } = await req.json();
+  const contentToAnalyze: string = extractedText
+    ? text ? `${extractedText}\n\n--- Nội dung bổ sung từ người dùng ---\n${text}` : extractedText
+    : (text ?? "");
 
-    if (!text && !imageBase64) {
-      return new Response(
-        JSON.stringify({ error: "Cần có nội dung text hoặc hình ảnh" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+  // ─── Step 1: URL safety ───
+  const urls = extractUrls(contentToAnalyze);
+  const urlResults = analyzeDomainSafety(urls, verifiedEntities.official_domains);
+  const suspiciousUrls = urlResults.filter((u) => u.suspicious);
+
+  // ─── Step 2: Entity verification ───
+  const entityResults = checkEntities(contentToAnalyze);
+
+  // ─── Step 3: Scam pattern matching ───
+  const patternMatches = matchScamPatterns(contentToAnalyze);
+
+  // ─── Step 4: Build enriched prompt with ground truth ───
+  let groundTruth = "";
+
+  if (urlResults.length > 0) {
+    groundTruth += "\n\n=== KẾT QUẢ KIỂM TRA URL ===\n";
+    for (const u of urlResults) {
+      groundTruth += `URL: ${u.url}\n  Đáng ngờ: ${u.suspicious ? "CÓ" : "KHÔNG"}\n  Chi tiết: ${u.reasons.join("; ")}\n`;
     }
+  }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
-
-    const aiHeaders = { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" };
-    const aiUrl = "https://ai.gateway.lovable.dev/v1/chat/completions";
-
-    // ─── OCR if image ───
-    let extractedText: string | null = null;
-    if (imageBase64) {
-      const ocrResponse = await fetch(aiUrl, {
-        method: "POST",
-        headers: aiHeaders,
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [
-            { role: "system", content: "Bạn là công cụ OCR. Trích xuất TOÀN BỘ văn bản có trong hình ảnh, giữ nguyên bố cục. Chỉ trả về văn bản thuần, không giải thích gì thêm." },
-            { role: "user", content: [
-              { type: "text", text: "Trích xuất toàn bộ văn bản trong hình ảnh này." },
-              { type: "image_url", image_url: { url: `data:image/jpeg;base64,${imageBase64}` } },
-            ]},
-          ],
-        }),
-      });
-      if (ocrResponse.ok) {
-        const ocrData = await ocrResponse.json();
-        extractedText = normalizeOCRText(ocrData.choices?.[0]?.message?.content || "");
-      }
+  if (entityResults.length > 0) {
+    groundTruth += "\n=== TỔ CHỨC/THƯƠNG HIỆU ĐƯỢC NHẮC ĐẾN ===\n";
+    for (const e of entityResults) {
+      groundTruth += `Danh mục: ${e.category} — Tìm thấy: ${e.found.join(", ")} (Đã xác minh là tổ chức thật tại VN 2026)\n`;
     }
+  }
 
-    const contentToAnalyze = extractedText
-      ? text ? `${extractedText}\n\n--- Nội dung bổ sung từ người dùng ---\n${text}` : extractedText
-      : text;
-
-    // ─── Step 1: URL safety ───
-    const urls = extractUrls(contentToAnalyze);
-    const urlResults = analyzeDomainSafety(urls, verifiedEntities.official_domains);
-    const suspiciousUrls = urlResults.filter((u) => u.suspicious);
-
-    // ─── Step 2: Entity verification ───
-    const entityResults = checkEntities(contentToAnalyze);
-
-    // ─── Step 3: Scam pattern matching ───
-    const patternMatches = matchScamPatterns(contentToAnalyze);
-
-    // ─── Step 4: Build enriched prompt with ground truth ───
-    let groundTruth = "";
-
-    if (urlResults.length > 0) {
-      groundTruth += "\n\n=== KẾT QUẢ KIỂM TRA URL ===\n";
-      for (const u of urlResults) {
-        groundTruth += `URL: ${u.url}\n  Đáng ngờ: ${u.suspicious ? "CÓ" : "KHÔNG"}\n  Chi tiết: ${u.reasons.join("; ")}\n`;
-      }
+  if (patternMatches.length > 0) {
+    groundTruth += "\n=== MẪU LỪA ĐẢO KHỚP TỪ CƠ SỞ DỮ LIỆU ===\n";
+    for (const p of patternMatches) {
+      groundTruth += `Mẫu: ${p.name} (Độ nguy hiểm: ${p.risk_weight}%)\n  Từ khóa khớp: ${p.matchedKeywords.join(", ")}\n  Mô tả: ${p.description}\n`;
     }
+  }
 
-    if (entityResults.length > 0) {
-      groundTruth += "\n=== TỔ CHỨC/THƯƠNG HIỆU ĐƯỢC NHẮC ĐẾN ===\n";
-      for (const e of entityResults) {
-        groundTruth += `Danh mục: ${e.category} — Tìm thấy: ${e.found.join(", ")} (Đã xác minh là tổ chức thật tại VN 2026)\n`;
-      }
-    }
-
-    if (patternMatches.length > 0) {
-      groundTruth += "\n=== MẪU LỪA ĐẢO KHỚP TỪ CƠ SỞ DỮ LIỆU ===\n";
-      for (const p of patternMatches) {
-        groundTruth += `Mẫu: ${p.name} (Độ nguy hiểm: ${p.risk_weight}%)\n  Từ khóa khớp: ${p.matchedKeywords.join(", ")}\n  Mô tả: ${p.description}\n`;
-      }
-    }
-
-    const systemPrompt = `Bạn là chuyên gia an ninh mạng tại Việt Nam, phân tích nội dung trong bối cảnh năm 2026, thị trường Việt Nam.
+  const systemPrompt = `Bạn là chuyên gia an ninh mạng tại Việt Nam, phân tích nội dung trong bối cảnh năm 2026, thị trường Việt Nam.
 
 Bạn được cung cấp kết quả xác minh thực tế từ các nguồn dữ liệu bên ngoài:
 - Kết quả kiểm tra an toàn URL (domain đáng ngờ, typosquatting, link rút gọn)
@@ -214,77 +203,130 @@ LƯU Ý:
 
 Trả lời JSON (không markdown code block):
 {
-  "scamPercent": <0-100>,
-  "riskLevel": "SAFE" | "SUSPICIOUS" | "SCAM",
-  "explanation": "giải thích chi tiết bằng tiếng Việt, nêu rõ lý do dựa trên dữ liệu xác minh",
-  "dangerousPhrases": ["cụm từ nguy hiểm 1", "cụm từ 2"],
-  "advice": "lời khuyên cụ thể cho người dùng bằng tiếng Việt",
-  "verificationSummary": "tóm tắt kết quả xác minh URL, tổ chức, mẫu lừa đảo"
+"scamPercent": <0-100>,
+"riskLevel": "SAFE" | "SUSPICIOUS" | "SCAM",
+"explanation": "giải thích chi tiết bằng tiếng Việt, nêu rõ lý do dựa trên dữ liệu xác minh",
+"dangerousPhrases": ["cụm từ nguy hiểm 1", "cụm từ 2"],
+"advice": "lời khuyên cụ thể cho người dùng bằng tiếng Việt",
+"verificationSummary": "tóm tắt kết quả xác minh URL, tổ chức, mẫu lừa đảo"
 }`;
 
-    const userMessage = `Phân tích nội dung sau:
+  const userMessage = `Phân tích nội dung sau:
 
 ${contentToAnalyze}
 ${groundTruth}`;
 
-    const aiResponse = await fetch(aiUrl, {
-      method: "POST",
-      headers: aiHeaders,
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userMessage },
-        ],
-      }),
-    });
+  const aiResponse = await fetch(aiUrl, {
+    method: "POST",
+    headers: aiHeaders,
+    body: JSON.stringify({
+      model: "google/gemini-3-flash-preview",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userMessage },
+      ],
+    }),
+  });
 
-    if (!aiResponse.ok) {
-      if (aiResponse.status === 429) {
-        return new Response(JSON.stringify({ error: "Hệ thống đang bận, vui lòng thử lại sau." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-      if (aiResponse.status === 402) {
-        return new Response(JSON.stringify({ error: "Hệ thống tạm thời không khả dụng." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-      const errText = await aiResponse.text();
-      console.error("AI gateway error:", aiResponse.status, errText);
-      throw new Error("AI gateway error");
+  if (!aiResponse.ok) {
+    if (aiResponse.status === 429) {
+      return new Response(JSON.stringify({ error: "Hệ thống đang bận, vui lòng thử lại sau." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if (aiResponse.status === 402) {
+      return new Response(JSON.stringify({ error: "Hệ thống tạm thời không khả dụng." }),
+        { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const errText = await aiResponse.text();
+    console.error("AI gateway error:", aiResponse.status, errText);
+    throw new Error("AI gateway error");
+  }
+
+  const aiData = await aiResponse.json();
+  const rawContent = aiData.choices?.[0]?.message?.content || "";
+
+  // ─── Step 5: Parse result ───
+  let result;
+  try {
+    const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+    result = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
+  } catch { result = null; }
+
+  if (!result) {
+    result = {
+      scamPercent: 50, riskLevel: "SUSPICIOUS",
+      explanation: rawContent, dangerousPhrases: [],
+      advice: "Hãy cẩn thận với nội dung này.",
+    };
+  }
+
+  if (typeof result.scamPercent !== "number") {
+    result.scamPercent = result.riskLevel === "SCAM" ? 85 : result.riskLevel === "SUSPICIOUS" ? 55 : 15;
+  }
+  if (result.scamPercent <= 30) result.riskLevel = "SAFE";
+  else if (result.scamPercent <= 70) result.riskLevel = "SUSPICIOUS";
+  else result.riskLevel = "SCAM";
+
+  if (extractedText) result.extractedText = extractedText;
+
+  // Add verification metadata
+  result.urlsChecked = urlResults.length;
+  result.suspiciousUrls = suspiciousUrls.map((u) => ({ url: u.url, reasons: u.reasons }));
+  result.entitiesMentioned = entityResults;
+  result.scamPatternsMatched = patternMatches.map((p) => ({ name: p.name, risk: p.risk_weight, keywords: p.matchedKeywords }));
+
+  result.engine = "builtin";
+  return result;
+}
+
+// ─── Main handler ───
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { text, imageBase64, sessionId, userId } = await req.json();
+
+    if (!text && !imageBase64) {
+      return new Response(
+        JSON.stringify({ error: "Cần có nội dung text hoặc hình ảnh" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    const aiData = await aiResponse.json();
-    const rawContent = aiData.choices?.[0]?.message?.content || "";
+    // ─── Analysis ───
+    // With PIPELINE_URL and PIPELINE_API_KEY set, the content goes through the
+    // multi-layer pipeline (rules, PhoBERT/DistilBERT, RAG, LLM). Otherwise, or
+    // when the pipeline cannot be reached, the built-in analysis runs.
+    let result: Record<string, unknown> | null = null;
 
-    // ─── Step 5: Parse result ───
-    let result;
-    try {
-      const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
-      result = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
-    } catch { result = null; }
+    const pipelineSettings = getPipelineSettings((name) => Deno.env.get(name));
+    if (pipelineSettings) {
+      try {
+        const outcome = await analyzeWithPipeline(pipelineSettings, { text, imageBase64 });
+        if (outcome.kind === "unreadable_image") {
+          return new Response(
+            JSON.stringify({ error: "Không đọc được chữ trong ảnh. Hãy thử ảnh rõ hơn hoặc dán nội dung dạng văn bản." }),
+            { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        result = outcome.result as unknown as Record<string, unknown>;
+      } catch (pipelineError) {
+        console.error(
+          "Pipeline unavailable, using built-in analysis:",
+          pipelineError instanceof Error ? pipelineError.message : pipelineError
+        );
+      }
+    }
 
     if (!result) {
-      result = {
-        scamPercent: 50, riskLevel: "SUSPICIOUS",
-        explanation: rawContent, dangerousPhrases: [],
-        advice: "Hãy cẩn thận với nội dung này.",
-      };
+      const builtIn = await analyzeBuiltIn(text ?? null, imageBase64 ?? null);
+      if (builtIn instanceof Response) return builtIn;
+      result = builtIn;
     }
 
-    if (typeof result.scamPercent !== "number") {
-      result.scamPercent = result.riskLevel === "SCAM" ? 85 : result.riskLevel === "SUSPICIOUS" ? 55 : 15;
-    }
-    if (result.scamPercent <= 30) result.riskLevel = "SAFE";
-    else if (result.scamPercent <= 70) result.riskLevel = "SUSPICIOUS";
-    else result.riskLevel = "SCAM";
-
-    if (extractedText) result.extractedText = extractedText;
-
-    // Add verification metadata
-    result.urlsChecked = urlResults.length;
-    result.suspiciousUrls = suspiciousUrls.map((u) => ({ url: u.url, reasons: u.reasons }));
-    result.entitiesMentioned = entityResults;
-    result.scamPatternsMatched = patternMatches.map((p) => ({ name: p.name, risk: p.risk_weight, keywords: p.matchedKeywords }));
+    const extractedText = typeof result.extractedText === "string" ? result.extractedText : null;
 
     // ─── Step 6: Save to DB ───
     const supabaseAdmin = createClient(

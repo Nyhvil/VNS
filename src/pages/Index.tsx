@@ -9,6 +9,8 @@ import { generateSessionId, getUserId } from "@/lib/scamAnalyzer";
 import ImageUpload from "@/components/ImageUpload";
 import AnalysisResult from "@/components/AnalysisResult";
 import { useToast } from "@/hooks/use-toast";
+import { getFunctionErrorMessage } from "@/lib/functionError";
+import type { PipelineInfo } from "@/components/LayerBreakdown";
 import vnsLogo from "@/assets/vns-logo.png";
 
 interface AnalysisResponse {
@@ -23,6 +25,8 @@ interface AnalysisResponse {
   suspiciousUrls?: { url: string; reasons: string[] }[];
   entitiesMentioned?: { found: string[]; category: string; verified: boolean }[];
   scamPatternsMatched?: { name: string; risk: number; keywords: string[] }[];
+  engine?: "pipeline" | "builtin";
+  pipeline?: PipelineInfo;
 }
 
 const Index = () => {
@@ -30,6 +34,7 @@ const Index = () => {
   const [imageBase64, setImageBase64] = useState<string | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [result, setResult] = useState<AnalysisResponse | null>(null);
+  const [analyzedText, setAnalyzedText] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { toast } = useToast();
 
@@ -51,12 +56,13 @@ const Index = () => {
       });
 
       if (error) throw error;
+      setAnalyzedText(emailContent.trim());
       setResult(data as AnalysisResponse);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Analysis error:", err);
       toast({
         title: "Lỗi phân tích",
-        description: err?.message || "Đã xảy ra lỗi, vui lòng thử lại.",
+        description: await getFunctionErrorMessage(err, "Đã xảy ra lỗi, vui lòng thử lại."),
         variant: "destructive",
       });
     } finally {
@@ -129,6 +135,8 @@ const Index = () => {
             suspiciousUrls={result.suspiciousUrls}
             entitiesMentioned={result.entitiesMentioned}
             scamPatternsMatched={result.scamPatternsMatched}
+            pipeline={result.pipeline}
+            analyzedText={analyzedText}
           />
         )}
 
