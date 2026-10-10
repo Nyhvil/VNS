@@ -36,7 +36,7 @@ jest.mock('../../logger/logger', () => ({
 const { parseInput } = require('../../parser/input-parser');
 const { extractFeatures } = require('../../features/feature-extractor');
 const { evaluateRules } = require('../../rules/rule-engine');
-const { analyzeWithRag } = require('../../rag/rag-analyzer');
+const { analyzeWithRag, storeContentToVectorDb } = require('../../rag/rag-analyzer');
 const { analyzeWithLlm } = require('../../llm/llm-analyzer');
 const { aggregateScores } = require('../../scoring/score-aggregator');
 
@@ -141,6 +141,67 @@ describe('Analysis Orchestrator', () => {
 
       const result = await runAnalysis(mockRequest);
       expect(result.findings.some(f => f.rule_id === 'spf_fail')).toBe(true);
+    });
+  });
+
+  describe('storing analysed content', () => {
+    it('should store safe content with the safe label', async () => {
+      await runAnalysis(mockRequest);
+
+      expect(storeContentToVectorDb).toHaveBeenCalledWith(
+        mockParsedContent,
+        mockRequest.job_id,
+        0,
+        'safe'
+      );
+    });
+
+    it('should store rule-confirmed phishing as a known phishing sample', async () => {
+      evaluateRules.mockReturnValue({
+        violations: [
+          { rule_id: 'ip_url', severity: 'high', description: 'IP URL', evidence: {} },
+        ],
+        score: 80,
+      });
+      aggregateScores.mockReturnValue({
+        risk_score: 20,
+        risk_level: 'low',
+        category: 'phishing',
+      });
+
+      await runAnalysis(mockRequest);
+
+      expect(storeContentToVectorDb).toHaveBeenCalledWith(
+        mockParsedContent,
+        mockRequest.job_id,
+        20,
+        'phishing'
+      );
+    });
+
+    it('should not turn similarity-only phishing into a known phishing sample', async () => {
+      analyzeWithRag.mockResolvedValue({
+        result: {
+          matches: [{ id: '1', similarity: 0.9, label: 'phishing', snippet: 'x' }],
+          top_score: 0.9,
+          score: 90,
+        },
+        finding: null,
+      });
+      aggregateScores.mockReturnValue({
+        risk_score: 32,
+        risk_level: 'medium',
+        category: 'phishing',
+      });
+
+      await runAnalysis(mockRequest);
+
+      expect(storeContentToVectorDb).toHaveBeenCalledWith(
+        mockParsedContent,
+        mockRequest.job_id,
+        32,
+        'phishing_similar'
+      );
     });
   });
 });

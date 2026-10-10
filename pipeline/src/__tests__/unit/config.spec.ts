@@ -49,6 +49,26 @@ describe('Config', () => {
       expect(config.llmEnabled).toBe(true);
     });
 
+    it('should parse LLM_ENABLED=false as boolean false', () => {
+      process.env['PIPELINE_API_KEY'] = 'test-key';
+      process.env['LLM_ENABLED'] = 'false';
+      const config = getConfig();
+      expect(config.llmEnabled).toBe(false);
+    });
+
+    it('should parse CACHE_ENABLED=false as boolean false', () => {
+      process.env['PIPELINE_API_KEY'] = 'test-key';
+      process.env['CACHE_ENABLED'] = 'false';
+      const config = getConfig();
+      expect(config.cacheEnabled).toBe(false);
+    });
+
+    it('should reject a boolean setting that is not a boolean', () => {
+      process.env['PIPELINE_API_KEY'] = 'test-key';
+      process.env['LLM_ENABLED'] = 'maybe';
+      expect(() => getConfig()).toThrow('Configuration validation failed');
+    });
+
     it('should default ragSimilarityThreshold to 0.75', () => {
       process.env['PIPELINE_API_KEY'] = 'test-key';
       const config = getConfig();

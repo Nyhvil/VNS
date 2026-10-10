@@ -1,4 +1,4 @@
-import { ParsedContent, RagResult, RagMatch, Finding, isParsedEmail } from '../types';
+import { ParsedContent, RagResult, RagMatch, Finding, Category, isParsedEmail } from '../types';
 import { createEmbedding, createEmbeddings } from './embedding-client';
 import { searchSimilar, upsertPoints } from './qdrant-client';
 import { getConfig } from '../config/config';
@@ -43,6 +43,12 @@ export async function analyzeWithRag(
     return { result: EMPTY_RAG_RESULT, finding: null };
   }
 
+  // Without an embedding key every text becomes the same all-zero vector,
+  // which cannot be compared with anything.
+  if (!config.openaiApiKey) {
+    return { result: EMPTY_RAG_RESULT, finding: null };
+  }
+
   try {
     const embedding = await createEmbedding(text);
     const searchResults = await searchSimilar(embedding, config.ragTopK);
@@ -78,12 +84,22 @@ export async function analyzeWithRag(
   }
 }
 
+/**
+ * Keep the analysed content in the vector DB, labelled with the verdict it
+ * received. Only points labelled `phishing` are matched by `analyzeWithRag`
+ * (see `searchSimilar`), so storing safe content no longer makes that content
+ * look like "known phishing" on its next submission.
+ */
 export async function storeContentToVectorDb(
   content: ParsedContent,
   jobId: string,
-  score: number
+  score: number,
+  label: Category | 'phishing_similar'
 ): Promise<void> {
   try {
+    // No embedding key means all-zero vectors: nothing worth storing.
+    if (!getConfig().openaiApiKey) return;
+
     const chunks = chunkContent(content);
     if (chunks.length === 0) return;
 
@@ -100,6 +116,9 @@ export async function storeContentToVectorDb(
         vector: embeddings[index] ?? new Array(1536).fill(0),
         payload: {
           text: chunk.text,
+          snippet: chunk.text.slice(0, 200),
+          label,
+          source: 'pipeline_auto',
           jobId,
           score,
           app_source: appSource,

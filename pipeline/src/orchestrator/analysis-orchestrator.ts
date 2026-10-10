@@ -249,7 +249,24 @@ async function performAnalysis(
   );
 
   // Background storage to VectorDB
-  storeContentToVectorDb(parseResult.content, request.job_id, aggregated.risk_score).catch(err => {
+  // Content becomes a "known phishing" sample for later comparisons only when
+  // a rule flagged it independently. Content that is phishing merely because
+  // it resembles an existing sample is kept under a separate label, otherwise
+  // the sample set would drift a little further with every near-match.
+  const hasHighSeverityRule = ruleResult.violations.some(
+    v => v.severity === 'high' || v.severity === 'critical'
+  );
+  const storedLabel: Category | 'phishing_similar' =
+    aggregated.category === 'phishing' && !hasHighSeverityRule
+      ? 'phishing_similar'
+      : aggregated.category;
+
+  storeContentToVectorDb(
+    parseResult.content,
+    request.job_id,
+    aggregated.risk_score,
+    storedLabel
+  ).catch(err => {
     logLayerError({
       job_id: request.job_id,
       layer_name: 'orchestrator_background_store',

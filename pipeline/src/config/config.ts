@@ -1,5 +1,18 @@
 import { z } from 'zod';
 
+// z.coerce.boolean() turns any non-empty string into true, so LLM_ENABLED=false
+// in a .env file would switch the LLM on. Parse the usual spellings instead.
+const envBoolean = (defaultValue: boolean) =>
+  z.preprocess(value => {
+    if (value === undefined || value === null) return undefined;
+    if (typeof value === 'boolean') return value;
+    const text = String(value).trim().toLowerCase();
+    if (text === '') return undefined;
+    if (['true', '1', 'yes', 'on'].includes(text)) return true;
+    if (['false', '0', 'no', 'off'].includes(text)) return false;
+    return value;
+  }, z.boolean().default(defaultValue));
+
 const configSchema = z.object({
   port: z.coerce.number().int().min(1).max(65535).default(3001),
   apiKey: z.string().min(1, 'PIPELINE_API_KEY is required'),
@@ -16,7 +29,7 @@ const configSchema = z.object({
   openaiEmbeddingModel: z.string().default('text-embedding-3-small'),
 
   // LLM
-  llmEnabled: z.coerce.boolean().default(false),
+  llmEnabled: envBoolean(false),
   llmModel: z.string().default('gpt-4o-mini'),
   llmTimeoutMs: z.coerce.number().int().positive().default(10000),
 
@@ -26,7 +39,7 @@ const configSchema = z.object({
   ragTopK: z.coerce.number().int().min(1).max(10).default(5),
 
   // Cache
-  cacheEnabled: z.coerce.boolean().default(true),
+  cacheEnabled: envBoolean(true),
   cacheTtlMs: z.coerce.number().int().positive().default(300000),
   cacheMaxSize: z.coerce.number().int().positive().default(1000),
 });
