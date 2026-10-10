@@ -2,6 +2,8 @@
 
 Có ba mức, từ đơn giản đến đầy đủ. Mức sau bao gồm mức trước.
 
+Muốn chạy cả trang web bằng một máy chủ duy nhất, không cần Supabase, hoặc đưa lên một địa chỉ công khai: xem [TRIEN_KHAI.md](TRIEN_KHAI.md).
+
 Trên Windows, thay `cp` bằng `copy`.
 
 ## Mức 1: giao diện, như bản Lovable

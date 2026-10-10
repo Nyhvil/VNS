@@ -1,0 +1,50 @@
+# Đưa VNS lên Render (https://render.com) thành một trang web công khai.
+# Một dịch vụ duy nhất lo cả ba việc: giao diện, pipeline phân tích, dữ liệu.
+# Hướng dẫn từng bước: docs/TRIEN_KHAI.md
+services:
+  - type: web
+    name: vns
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm ci --include=dev && npm run build:all
+    # Chạy thẳng node (không qua npm) để tiết kiệm bộ nhớ của gói miễn phí.
+    startCommand: cd pipeline && node dist/main.js
+    healthCheckPath: /pipeline/health
+    envVars:
+      - key: NODE_VERSION
+        value: 22.22.0
+
+      # Bật chế độ máy chủ tự chạy: phục vụ giao diện và /functions/v1/*.
+      - key: WEB_ENABLED
+        value: "true"
+
+      # Khoá của API /pipeline/* (không dùng cho trang web). Render tự sinh.
+      - key: PIPELINE_API_KEY
+        generateValue: true
+      - key: PIPELINE_ALLOWED_IPS
+        value: "*"
+
+      # Mật khẩu trang /admin. Render hỏi khi tạo dịch vụ; hãy đặt mật khẩu dài.
+      - key: ADMIN_PASSWORD
+        sync: false
+
+      # Lớp LLM (giải thích, chatbot, đọc ảnh bằng AI). Render hỏi khoá khi tạo
+      # dịch vụ. Lấy khoá miễn phí tại https://aistudio.google.com/apikey
+      - key: LLM_ENABLED
+        value: "true"
+      - key: LLM_PROVIDER
+        value: gemini
+      - key: LLM_MODE
+        value: always
+      - key: GEMINI_API_KEY
+        sync: false
+
+      # Số máy chủ trung gian đứng trước dịch vụ, để giới hạn tần suất đếm
+      # đúng địa chỉ người dùng. Xem mục "Giới hạn tần suất" trong hướng dẫn.
+      - key: TRUSTED_PROXY_HOPS
+        value: "2"
+
+      # Thêm sau trong mục Environment của dịch vụ (xem docs/TRIEN_KHAI.md):
+      #   DATABASE_URL   để dữ liệu trang admin không mất khi dịch vụ khởi động lại
+      #   QDRANT_URL, QDRANT_API_KEY, EMBEDDING_API_KEY ...   để bật lớp RAG

@@ -15,6 +15,20 @@ Giao diện và hàm `analyze-content` chạy được theo hai chế độ. Ch�
 
 Bản tại https://vietnamsafe.lovable.app đang chạy chế độ tích hợp sẵn. Mã trong repo này chạy được cả hai chế độ.
 
+### Bản máy chủ tự chạy
+
+Hai chế độ trên đều cần Supabase để chạy các hàm và lưu dữ liệu. Repo có thêm một cách chạy thứ ba không cần Supabase: đặt `WEB_ENABLED=true` thì chính dịch vụ `pipeline/` phục vụ luôn giao diện và trả lời bốn địa chỉ `/functions/v1/analyze-content`, `submit-feedback`, `admin-data`, `scam-chat` với cùng dạng yêu cầu và kết quả như các hàm Supabase. Giao diện không đổi; bản build `npm run build:standalone` chỉ thay địa chỉ gọi từ Supabase sang chính máy chủ đó.
+
+| | Lovable + Supabase | Máy chủ tự chạy |
+| --- | --- | --- |
+| Giao diện | Lovable phục vụ | Máy chủ phục vụ tệp đã build |
+| Phân tích | Hàm `analyze-content`, gọi pipeline qua mạng nếu có cấu hình | Pipeline chạy ngay trong máy chủ, luôn là chế độ pipeline |
+| Dữ liệu | Supabase Postgres và Storage | PostgreSQL bất kỳ qua `DATABASE_URL`, hoặc tệp |
+| LLM | Lovable AI Gateway | Gemini hoặc OpenAI bằng khoá riêng; không có khoá thì chỉ chạy bộ luật |
+| Bảo vệ | Do Supabase lo | Giới hạn tần suất theo địa chỉ và tổng, khoá số lần thử mật khẩu admin |
+
+Mã nằm ở `pipeline/src/web/`. Phần chuyển đổi yêu cầu và kết quả (`pipeline-client.ts`, `chat-core.ts`) là bản sao của tệp cùng tên trong `supabase/functions/`; một bài test giữ cho hai bản giống nhau. Hướng dẫn triển khai: [TRIEN_KHAI.md](TRIEN_KHAI.md).
+
 ## Luồng xử lý ở chế độ pipeline
 
 ```

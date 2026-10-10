@@ -48,7 +48,9 @@ VNS miễn phí cho người dùng cá nhân và hoạt động theo mô hình p
 
 ## Cách hệ thống hoạt động
 
-Hệ thống có hai chế độ. Chế độ nào chạy là do cấu hình, không phải sửa mã.
+Hệ thống có hai chế độ phân tích. Chế độ nào chạy là do cấu hình, không phải sửa mã.
+
+Ngoài cách chạy trên Lovable và Supabase, repo còn có **bản máy chủ tự chạy**: một máy chủ Node.js duy nhất lo cả giao diện, pipeline và dữ liệu, dùng để đưa VNS lên một địa chỉ công khai riêng. Xem [docs/TRIEN_KHAI.md](docs/TRIEN_KHAI.md).
 
 ### Chế độ tích hợp sẵn
 
@@ -123,9 +125,11 @@ supabase/
   functions/admin-data/        Số liệu cho trang quản trị
   migrations/                  Cấu trúc cơ sở dữ liệu
 pipeline/                      Dịch vụ phân tích nhiều lớp (Node.js)
+  src/web/                     Bản máy chủ tự chạy: /functions/v1/*, lưu dữ liệu, giới hạn tần suất
 ml-service/                    Dịch vụ PhoBERT / DistilBERT và PaddleOCR (FastAPI)
-docs/                          Kiến trúc, đối chiếu công nghệ, hướng dẫn chạy
+docs/                          Kiến trúc, đối chiếu công nghệ, hướng dẫn chạy, hướng dẫn triển khai
 docker-compose.yml             Qdrant, Redis, pipeline, dịch vụ ML
+render.yaml, Dockerfile        Cấu hình đưa bản máy chủ tự chạy lên mạng
 ```
 
 ## Chạy trên máy
@@ -151,6 +155,17 @@ Các hàm backend dùng các biến bí mật sau, đặt trong phần cấu hì
 | `PIPELINE_URL`, `PIPELINE_API_KEY` | Không bắt buộc. Có hai biến này thì hệ thống chạy chế độ pipeline |
 
 Chạy pipeline và dịch vụ ML: xem [docs/HUONG_DAN_CHAY.md](docs/HUONG_DAN_CHAY.md).
+
+Chạy cả trang web bằng một lệnh, không cần Supabase (bản máy chủ tự chạy):
+
+```sh
+npm ci --include=dev
+npm run build:all        # build giao diện và pipeline
+# tạo pipeline/.env với PIPELINE_API_KEY, WEB_ENABLED=true, ADMIN_PASSWORD
+npm start                # mở http://localhost:3001
+```
+
+Đưa bản này lên một địa chỉ công khai: xem [docs/TRIEN_KHAI.md](docs/TRIEN_KHAI.md).
 
 Lệnh khác: `npm run build` để build, `npm test` để chạy kiểm thử của giao diện.
 

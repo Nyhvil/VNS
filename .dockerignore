@@ -1,0 +1,13 @@
+.git
+node_modules
+dist
+pipeline/node_modules
+pipeline/dist
+pipeline/var
+pipeline/coverage
+pipeline/.env
+ml-service
+docs
+supabase
+.env
+*.md
