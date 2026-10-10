@@ -40,5 +40,37 @@ describe('Keyword Detector', () => {
       const result = detectSuspiciousKeywords('Please click here to verify');
       expect(result).toContain('click here');
     });
+
+    it('should detect Vietnamese scam phrases', () => {
+      const result = detectSuspiciousKeywords(
+        'Chúc mừng bạn đã trúng thưởng xe SH. Vui lòng xác nhận ngay hôm nay.'
+      );
+      expect(result).toContain('trúng thưởng');
+      expect(result).toContain('chúc mừng bạn');
+      expect(result).toContain('xác nhận ngay');
+    });
+
+    it('should detect Vietnamese phrases typed without diacritics', () => {
+      const result = detectSuspiciousKeywords(
+        'Tai khoan bi khoa. Vui long cung cap ma OTP trong vong 24h.'
+      );
+      expect(result).toContain('tài khoản bị khóa');
+      expect(result).toContain('mã otp');
+      expect(result).toContain('trong vòng 24h');
+    });
+
+    it('should not flag an ordinary Vietnamese message', () => {
+      const result = detectSuspiciousKeywords(
+        'Chào bạn, chiều nay 3 giờ nhóm mình họp ở thư viện tầng 2 nhé. Nhớ mang theo laptop.'
+      );
+      expect(result).toEqual([]);
+    });
+
+    it('should not flag an ordinary delivery notice', () => {
+      const result = detectSuspiciousKeywords(
+        'Đơn hàng của bạn đã được giao thành công. Cảm ơn bạn đã mua hàng.'
+      );
+      expect(result).toEqual([]);
+    });
   });
 });
