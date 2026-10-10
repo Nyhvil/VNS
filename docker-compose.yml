@@ -1,0 +1,50 @@
+# Services behind the VNS analysis pipeline, for running on your own machine.
+#
+#   docker compose up -d                 Qdrant + Redis + pipeline
+#   docker compose --profile ml up -d    ... plus the ML service (large image)
+#
+# Before the first start:  cp pipeline/.env.example pipeline/.env  and fill in
+# PIPELINE_API_KEY (and the API keys of the layers you want).
+# For the ML service also:  cp ml-service/.env.example ml-service/.env
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.17.0
+    ports:
+      - "6333:6333"
+    volumes:
+      - vns_qdrant:/qdrant/storage
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  pipeline:
+    build: ./pipeline
+    env_file: ./pipeline/.env
+    environment:
+      # Inside the compose network the services are reached by name.
+      QDRANT_URL: http://qdrant:6333
+      REDIS_URL: redis://redis:6379
+      # Requests arrive through Docker's network, not from 127.0.0.1.
+      PIPELINE_ALLOWED_IPS: "*"
+    ports:
+      - "3001:3001"
+    depends_on:
+      - qdrant
+      - redis
+
+  # PhoBERT / DistilBERT classifier and PaddleOCR. To use it, also set in
+  # pipeline/.env:  ML_SERVICE_URL=http://ml-service:8000
+  ml-service:
+    profiles: ["ml"]
+    build: ./ml-service
+    env_file: ./ml-service/.env
+    ports:
+      - "8000:8000"
+    volumes:
+      # Fine-tuned models, e.g. PHOBERT_MODEL=/srv/models/phobert-scam
+      - ./ml-service/models:/srv/models
+
+volumes:
+  vns_qdrant:
