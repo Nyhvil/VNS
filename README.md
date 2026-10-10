@@ -102,6 +102,6 @@ Lệnh khác: `npm run build` để build, `npm test` để chạy kiểm thử.
 
 ## Nhóm thực hiện
 
-Dự án VNS – VIỆT NAM SAFE, dự thi cuộc thi GenD, lĩnh vực Xã hội và môi trường.
+Dự án VNS – VIỆT NAM SAFE, dự thi cuộc thi GenD.
 
 [Điền tên các thành viên và thông tin liên hệ của nhóm]
