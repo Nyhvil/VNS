@@ -1,0 +1,116 @@
+{
+  "patterns": [
+    {
+      "id": "fake_bank_otp",
+      "name": "Giả mạo ngân hàng yêu cầu OTP",
+      "keywords": ["OTP", "mã xác thực", "xác minh tài khoản", "tài khoản bị khóa", "tài khoản bị đóng băng"],
+      "description": "Giả danh ngân hàng yêu cầu cung cấp OTP hoặc mã xác thực để chiếm đoạt tài khoản",
+      "risk_weight": 90
+    },
+    {
+      "id": "fake_police",
+      "name": "Giả danh công an/cơ quan pháp luật",
+      "keywords": ["công an", "triệu tập", "lệnh bắt", "liên quan đến vụ án", "rửa tiền", "ma túy", "điều tra"],
+      "description": "Kẻ lừa đảo giả danh công an gọi điện/nhắn tin đe dọa nạn nhân liên quan vụ án để chiếm đoạt tiền",
+      "risk_weight": 95
+    },
+    {
+      "id": "fake_prize",
+      "name": "Trúng thưởng giả",
+      "keywords": ["trúng thưởng", "giải thưởng", "quay số", "may mắn", "nhận thưởng", "chúc mừng bạn"],
+      "description": "Thông báo trúng thưởng giả yêu cầu đóng phí hoặc cung cấp thông tin cá nhân",
+      "risk_weight": 85
+    },
+    {
+      "id": "fake_job",
+      "name": "Tuyển dụng lừa đảo / việc nhẹ lương cao",
+      "keywords": ["việc nhẹ lương cao", "thu nhập thụ động", "làm việc tại nhà", "không cần kinh nghiệm", "đặt cọc", "phí đăng ký", "commission", "hoa hồng cao"],
+      "description": "Lừa đảo tuyển dụng với mức lương hấp dẫn bất thường, yêu cầu đặt cọc hoặc phí",
+      "risk_weight": 80
+    },
+    {
+      "id": "phishing_link",
+      "name": "Link phishing giả mạo",
+      "keywords": ["click vào link", "nhấn vào đây", "xác nhận ngay", "cập nhật thông tin", "đăng nhập lại"],
+      "description": "Gửi link giả mạo website ngân hàng/dịch vụ để đánh cắp thông tin đăng nhập",
+      "risk_weight": 85
+    },
+    {
+      "id": "romance_scam",
+      "name": "Lừa đảo tình cảm",
+      "keywords": ["yêu em", "gửi tiền", "chuyển tiền giúp", "ở nước ngoài", "quà từ nước ngoài", "phí hải quan"],
+      "description": "Lừa đảo tình cảm qua mạng xã hội, xây dựng quan hệ giả để xin tiền",
+      "risk_weight": 75
+    },
+    {
+      "id": "investment_scam",
+      "name": "Đầu tư lừa đảo / Ponzi",
+      "keywords": ["đầu tư sinh lời", "lợi nhuận cam kết", "lãi suất cao", "sàn giao dịch", "crypto", "forex", "tiền ảo", "x2 x3", "nhân đôi", "nhân ba"],
+      "description": "Lừa đảo đầu tư tài chính với lợi nhuận phi thực tế, mô hình Ponzi",
+      "risk_weight": 90
+    },
+    {
+      "id": "fake_shipping",
+      "name": "Giả mạo đơn vị vận chuyển",
+      "keywords": ["đơn hàng", "bưu phẩm", "giao hàng thất bại", "phí vận chuyển", "xác nhận nhận hàng", "COD"],
+      "description": "Giả danh đơn vị vận chuyển thông báo đơn hàng để lừa nạn nhân click link hoặc chuyển tiền",
+      "risk_weight": 75
+    },
+    {
+      "id": "loan_scam",
+      "name": "Cho vay nặng lãi / app tín dụng đen",
+      "keywords": ["vay nhanh", "duyệt ngay", "không cần thế chấp", "phí bảo hiểm khoản vay", "giải ngân nhanh", "phí mở tài khoản"],
+      "description": "Lừa đảo cho vay online yêu cầu đóng các khoản phí trước khi giải ngân",
+      "risk_weight": 85
+    },
+    {
+      "id": "sim_swap",
+      "name": "Chiếm đoạt SIM / nâng cấp SIM",
+      "keywords": ["nâng cấp SIM", "SIM 4G", "SIM 5G", "hết hạn SIM", "khóa SIM", "cung cấp mã"],
+      "description": "Giả danh nhà mạng yêu cầu nâng cấp SIM để chiếm đoạt số điện thoại",
+      "risk_weight": 85
+    },
+    {
+      "id": "fake_tax",
+      "name": "Giả mạo cơ quan thuế",
+      "keywords": ["hoàn thuế", "nợ thuế", "quyết toán thuế", "mã số thuế", "eTax"],
+      "description": "Giả danh cơ quan thuế yêu cầu cung cấp thông tin hoặc chuyển tiền",
+      "risk_weight": 80
+    },
+    {
+      "id": "social_engineering",
+      "name": "Giả mạo người quen / hack Facebook",
+      "keywords": ["mượn tiền", "chuyển giúp", "tài khoản bị hack", "em ơi giúp anh", "gấp lắm"],
+      "description": "Hack tài khoản mạng xã hội rồi nhắn tin mượn tiền bạn bè, người thân",
+      "risk_weight": 80
+    },
+    {
+      "id": "fake_charity",
+      "name": "Kêu gọi từ thiện giả",
+      "keywords": ["quyên góp", "từ thiện", "cứu trợ", "giúp đỡ", "hoàn cảnh khó khăn", "bệnh nặng"],
+      "description": "Lợi dụng thiên tai, bệnh tật để kêu gọi quyên góp từ thiện giả",
+      "risk_weight": 65
+    },
+    {
+      "id": "vneid_scam",
+      "name": "Giả mạo VNeID / căn cước công dân",
+      "keywords": ["VNeID", "định danh", "căn cước", "CCCD", "mức độ 2", "xác thực sinh trắc"],
+      "description": "Giả danh cơ quan yêu cầu cập nhật VNeID/CCCD để lừa cài app giả mạo",
+      "risk_weight": 90
+    },
+    {
+      "id": "qr_scam",
+      "name": "Lừa đảo mã QR",
+      "keywords": ["quét mã QR", "scan QR", "chuyển tiền qua QR", "thanh toán QR"],
+      "description": "Gửi mã QR giả dẫn đến website phishing hoặc chuyển tiền cho kẻ lừa đảo",
+      "risk_weight": 75
+    },
+    {
+      "id": "urgency_pressure",
+      "name": "Tạo áp lực khẩn cấp",
+      "keywords": ["khẩn cấp", "ngay lập tức", "trong vòng 24h", "hết hạn", "bị phạt", "bị khóa vĩnh viễn", "mất quyền"],
+      "description": "Tạo cảm giác khẩn cấp giả để nạn nhân không kịp suy nghĩ và hành động vội vàng",
+      "risk_weight": 70
+    }
+  ]
+}
