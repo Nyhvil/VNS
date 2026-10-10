@@ -258,14 +258,26 @@ export class AnalyzeService {
   }): Promise<AnalyzeResultResponseDto> {
     const r = params.pipelineResponse;
     const weighted = this.computeWeightedRiskScore(r);
-    const finalRiskScore = weighted.score ?? r.risk_score;
+    // analyze_results.risk_score is a SMALLINT (0-100), so the stored score
+    // must be a whole number.
+    const finalRiskScore = this.toStoredRiskScore(
+      weighted.score ?? r.risk_score,
+    );
+    // The level shown to the user has to describe the score stored next to
+    // it. When the server re-weights the score, re-derive the level too.
+    const finalRiskLevel =
+      weighted.score !== null
+        ? this.mapRiskLevel(finalRiskScore)
+        : r.risk_level;
     const enrichedRawResponse = {
       ...r,
       scoring: {
         mode: weighted.score !== null ? 'weighted' : 'pipeline_default',
         weights: weighted.weights,
         component_scores: weighted.componentScores,
+        weighted_risk_score: weighted.score,
         final_risk_score: finalRiskScore,
+        final_risk_level: finalRiskLevel,
       },
     };
 
@@ -282,7 +294,7 @@ export class AnalyzeService {
         params.job_id,
         params.scan_id,
         finalRiskScore,
-        r.risk_level,
+        finalRiskLevel,
         r.category,
         JSON.stringify(r.findings),
         JSON.stringify(r.evidence),
@@ -395,6 +407,20 @@ export class AnalyzeService {
       weights,
       componentScores: componentScores as Record<string, number>,
     };
+  }
+
+  private toStoredRiskScore(score: number): number {
+    const numeric = Number(score);
+    if (!Number.isFinite(numeric)) return 0;
+    return Math.max(0, Math.min(100, Math.round(numeric)));
+  }
+
+  // Same thresholds as the pipeline (pipeline/src/scoring/risk-level-mapper.ts).
+  private mapRiskLevel(score: number): string {
+    if (score <= 29) return 'low';
+    if (score <= 59) return 'medium';
+    if (score <= 84) return 'high';
+    return 'critical';
   }
 
   private getRiskWeights(): Record<string, number> {
