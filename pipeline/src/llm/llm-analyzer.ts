@@ -1,5 +1,6 @@
 import { ParsedContent, LlmResult, FeatureSet, RagMatch, MlResult } from '../types';
 import { sanitizePii } from './pii-sanitizer';
+import { NO_CONTACT_RULE, removeContactDetails } from './contact-guard';
 import { getConfig } from '../config/config';
 import { getLlmEndpoint } from '../config/ai-endpoints';
 import { logLayerError } from '../logger/logger';
@@ -19,6 +20,8 @@ export interface LlmContext {
 const SYSTEM_PROMPT = `Bạn là chuyên gia an ninh mạng tại Việt Nam. Nhiệm vụ: đánh giá một nội dung (tin nhắn, email, văn bản trích từ ảnh) có phải lừa đảo hay không.
 
 Bạn được cung cấp kết quả kiểm tra của các lớp khác: bộ luật, kiểm tra đường link, đối chiếu tổ chức thật tại Việt Nam, mẫu lừa đảo phổ biến, các mẫu lừa đảo tương tự tìm được trong cơ sở dữ liệu, và kết quả của mô hình phân loại. HÃY DÙNG CÁC DỮ LIỆU NÀY LÀM CĂN CỨ. Nếu nội dung nhắc tới một tổ chức thật nhưng đường link không thuộc tên miền chính thức thì khả năng giả mạo cao.
+
+${NO_CONTACT_RULE}
 
 Lưu ý: nội dung có thể được trích từ ảnh nên còn lỗi ký tự; thông tin cá nhân đã được thay bằng ký hiệu như [PHONE_REDACTED].
 
@@ -157,7 +160,7 @@ export async function analyzeWithLlm(
       // A verdict counts only when the model actually gave a score.
       succeeded: hasScore,
       dangerous_phrases: asStringList(parsed['dangerous_phrases'] ?? parsed['dangerousPhrases']),
-      advice: typeof parsed['advice'] === 'string' ? parsed['advice'] : '',
+      advice: typeof parsed['advice'] === 'string' ? removeContactDetails(parsed['advice']) : '',
       verification_summary:
         typeof parsed['verification_summary'] === 'string'
           ? parsed['verification_summary']

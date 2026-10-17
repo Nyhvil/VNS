@@ -7,6 +7,7 @@ import { searchSimilar } from '../rag/qdrant-client';
 import { rerankMatches } from '../rag/reranker';
 import { matchScamPatterns } from '../knowledge';
 import { sanitizePii } from '../llm/pii-sanitizer';
+import { NO_CONTACT_RULE, removeContactDetails } from '../llm/contact-guard';
 import { logLayerError } from '../logger/logger';
 
 /**
@@ -71,7 +72,8 @@ Quy tắc:
 - Dựa vào phần "Ngữ cảnh" được cung cấp (kết quả phân tích, mẫu lừa đảo tương tự, kiến thức về các hình thức lừa đảo). Nếu ngữ cảnh không đủ để trả lời, hãy nói rõ là bạn không chắc.
 - Chỉ trả lời về an toàn số và phòng chống lừa đảo. Với câu hỏi ngoài phạm vi, hãy từ chối lịch sự.
 - Không bao giờ yêu cầu người dùng cung cấp mật khẩu, mã OTP, số thẻ hay giấy tờ tùy thân.
-- Khi người dùng có thể đã bị lừa, hướng dẫn họ liên hệ ngân hàng qua số tổng đài chính thức và trình báo cơ quan công an.`;
+- Khi người dùng có thể đã bị lừa, hướng dẫn họ liên hệ ngân hàng và trình báo cơ quan công an.
+- ${NO_CONTACT_RULE}`;
 
 const CHAT_MAX_TOKENS = 4096;
 
@@ -197,6 +199,7 @@ export async function answerQuestion(request: ChatRequest, jobId: string): Promi
   const choice = response.choices[0];
   let answer = choice?.message?.content?.trim() ?? '';
   if (choice?.finish_reason === 'length') answer = trimToLastSentence(answer);
+  answer = removeContactDetails(answer);
 
   if (!answer) {
     throw new Error('The model returned an empty answer');
