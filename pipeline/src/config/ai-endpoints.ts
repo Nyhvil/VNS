@@ -26,6 +26,7 @@ export interface LlmConfig {
   llmBaseUrl?: string;
   llmModel?: string;
   llmVisionModel?: string;
+  llmReasoningEffort?: 'off' | 'low' | 'medium' | 'high';
 }
 
 /** Where chat-completion requests go: OpenAI, Gemini, or a custom endpoint. */
@@ -36,6 +37,19 @@ export function getLlmEndpoint(config: LlmConfig): AiEndpoint {
   const apiKey = config.llmApiKey ?? (provider === 'openai' ? config.openaiApiKey : undefined);
 
   return { apiKey, baseURL, model: config.llmModel ?? 'gpt-4o-mini' };
+}
+
+/**
+ * How long "thinking" models may reason before answering.
+ *
+ * Gemini Flash thinks by default, and with room to do so an answer can take
+ * longer than LLM_TIMEOUT_MS, so the layer gives up and the chat times out.
+ * For Gemini the default is "low"; other providers get nothing unless
+ * LLM_REASONING_EFFORT is set ("off" sends nothing at all).
+ */
+export function getReasoningOptions(config: LlmConfig): { reasoning_effort?: 'low' | 'medium' | 'high' } {
+  const effort = config.llmReasoningEffort ?? (config.llmProvider === 'gemini' ? 'low' : 'off');
+  return effort === 'off' ? {} : { reasoning_effort: effort };
 }
 
 /** Same endpoint as the LLM, with the model used for reading images. */

@@ -1,6 +1,6 @@
 import { OcrResult } from '../types';
 import { getConfig } from '../config/config';
-import { getVisionEndpoint } from '../config/ai-endpoints';
+import { getReasoningOptions, getVisionEndpoint } from '../config/ai-endpoints';
 import { getOcrCache, generateHash } from '../cache/cache-manager';
 import { ocrWithMlService } from '../ml/ml-client';
 
@@ -65,7 +65,8 @@ Respond strictly in JSON format.`
           ]
         }
       ],
-      response_format: { type: 'json_object' }
+      response_format: { type: 'json_object' },
+      ...getReasoningOptions(config),
     });
 
     const rawContent = response.choices[0]?.message?.content ?? '{}';

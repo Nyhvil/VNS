@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { RagMatch } from '../types';
 import { getConfig } from '../config/config';
-import { getLlmEndpoint, getEmbeddingEndpoint } from '../config/ai-endpoints';
+import { getLlmEndpoint, getEmbeddingEndpoint, getReasoningOptions } from '../config/ai-endpoints';
 import { createEmbedding } from '../rag/embedding-client';
 import { searchSimilar } from '../rag/qdrant-client';
 import { rerankMatches } from '../rag/reranker';
@@ -179,7 +179,7 @@ export async function answerQuestion(request: ChatRequest, jobId: string): Promi
   const client = new OpenAI({ apiKey: endpoint.apiKey, baseURL: endpoint.baseURL });
 
   const timeoutPromise = new Promise<never>((_, reject) =>
-    setTimeout(() => reject(new Error('LLM timeout')), (config.llmTimeoutMs ?? 10000) * 2)
+    setTimeout(() => reject(new Error('LLM timeout')), (config.llmTimeoutMs ?? 15000) * 2)
   );
 
   const completion = client.chat.completions.create({
@@ -193,6 +193,7 @@ export async function answerQuestion(request: ChatRequest, jobId: string): Promi
     // reasoning counts towards this limit too, and a tight limit cuts the
     // visible answer off mid-sentence.
     max_tokens: CHAT_MAX_TOKENS,
+    ...getReasoningOptions(config),
   });
 
   const response = await Promise.race([completion, timeoutPromise]);

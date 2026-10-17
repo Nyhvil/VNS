@@ -2,7 +2,7 @@ import { ParsedContent, LlmResult, FeatureSet, RagMatch, MlResult } from '../typ
 import { sanitizePii } from './pii-sanitizer';
 import { NO_CONTACT_RULE, removeContactDetails } from './contact-guard';
 import { getConfig } from '../config/config';
-import { getLlmEndpoint } from '../config/ai-endpoints';
+import { getLlmEndpoint, getReasoningOptions } from '../config/ai-endpoints';
 import { logLayerError } from '../logger/logger';
 
 const DISABLED_RESULT: LlmResult = {
@@ -143,6 +143,7 @@ export async function analyzeWithLlm(
       response_format: { type: 'json_object' },
       // Room for the reasoning of "thinking" models as well as the JSON answer.
       max_tokens: 4096,
+      ...getReasoningOptions(config),
     });
 
     const response = await Promise.race([llmPromise, timeoutPromise]);

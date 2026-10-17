@@ -43,7 +43,8 @@ const configSchema = z.object({
   llmBaseUrl: z.string().url().optional(),
   llmModel: z.string().default('gpt-4o-mini'),
   llmVisionModel: z.string().optional(),
-  llmTimeoutMs: z.coerce.number().int().positive().default(10000),
+  llmReasoningEffort: z.enum(['off', 'low', 'medium', 'high']).optional(),
+  llmTimeoutMs: z.coerce.number().int().positive().default(15000),
   // gray_zone: ask the LLM only when the other layers are undecided (score in
   // [15, 75)). always: ask it for every content that takes the deep path.
   llmMode: z.enum(['gray_zone', 'always']).default('gray_zone'),
@@ -146,6 +147,7 @@ function loadConfig(): Config {
       emptyToUndefined(process.env['LLM_MODEL']) ??
       (llmProvider === 'gemini' ? DEFAULT_GEMINI_MODEL : undefined),
     llmVisionModel: emptyToUndefined(process.env['LLM_VISION_MODEL']),
+    llmReasoningEffort: emptyToUndefined(process.env['LLM_REASONING_EFFORT']),
     llmTimeoutMs: process.env['LLM_TIMEOUT_MS'],
     llmMode: emptyToUndefined(process.env['LLM_MODE']),
     mlServiceUrl: emptyToUndefined(process.env['ML_SERVICE_URL']),
