@@ -17,6 +17,8 @@ export interface ScanRow {
   risk_level: string;
   ai_result: string;
   dangerous_phrases: string[];
+  /** The signed-in account that made the scan, if any. */
+  account_id?: string | null;
 }
 
 export interface LogRow {
@@ -69,6 +71,8 @@ export interface DataStore {
   /** Attach feedback to the newest log of the session. False when there is none. */
   setFeedbackForLatestLog(sessionId: string, feedback: string): Promise<boolean>;
   getAdminData(): Promise<AdminData>;
+  /** Newest scans made by one account, for its history page. */
+  listScansByAccount(accountId: string, limit: number): Promise<ScanRow[]>;
   close(): Promise<void>;
 }
 

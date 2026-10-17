@@ -77,6 +77,8 @@ CREATE TABLE IF NOT EXISTS scan_images (
 CREATE INDEX IF NOT EXISTS scans_created_at_idx ON scans (created_at DESC);
 CREATE INDEX IF NOT EXISTS mailguard_logs_created_at_idx ON mailguard_logs (created_at DESC);
 CREATE INDEX IF NOT EXISTS mailguard_logs_session_idx ON mailguard_logs (session_id, created_at DESC);
+ALTER TABLE scans ADD COLUMN IF NOT EXISTS account_id uuid;
+CREATE INDEX IF NOT EXISTS scans_account_idx ON scans (account_id, created_at DESC);
 `;
 
 function toIso(value: unknown): string {
@@ -87,7 +89,7 @@ function toIso(value: unknown): string {
 export class PostgresStore implements DataStore {
   readonly kind = 'postgres' as const;
 
-  constructor(private readonly pool: Pool) {}
+  constructor(readonly pool: Pool) {}
 
   static async connect(databaseUrl: string, sslMode: DatabaseSslMode = 'auto'): Promise<PostgresStore> {
     const { Pool: PgPool } = await import('pg');
@@ -117,8 +119,8 @@ export class PostgresStore implements DataStore {
 
   async insertScan(scan: NewScan): Promise<void> {
     await this.pool.query(
-      `INSERT INTO scans (id, session_id, user_id, type, content_text, image_url, risk_level, ai_result, dangerous_phrases)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      `INSERT INTO scans (id, session_id, user_id, type, content_text, image_url, risk_level, ai_result, dangerous_phrases, account_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
       [
         randomUUID(),
         scan.session_id,
@@ -129,6 +131,7 @@ export class PostgresStore implements DataStore {
         scan.risk_level,
         scan.ai_result,
         scan.dangerous_phrases,
+        scan.account_id ?? null,
       ]
     );
   }
@@ -171,6 +174,16 @@ export class PostgresStore implements DataStore {
       ),
       logs: logs.rows.map((row): LogRow => ({ ...row, created_at: toIso(row.created_at) })),
     };
+  }
+
+  async listScansByAccount(accountId: string, limit: number): Promise<ScanRow[]> {
+    const result = await this.pool.query('SELECT * FROM scans WHERE account_id = $1 ORDER BY created_at DESC LIMIT $2', [
+      accountId,
+      limit,
+    ]);
+    return result.rows.map(
+      (row): ScanRow => ({ ...row, created_at: toIso(row.created_at), dangerous_phrases: row.dangerous_phrases ?? [] })
+    );
   }
 
   async close(): Promise<void> {

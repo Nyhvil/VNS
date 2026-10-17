@@ -7,6 +7,9 @@ import { parseChatInput, toPipelineChatRequest } from './chat-core';
 import { decodeBase64, detectImageType } from './image-type';
 import { rateLimit, RateLimiter } from './rate-limit';
 import { DataStore } from './store';
+import { AccountError, AccountService, Identity } from './accounts/account-service';
+import { createAccountRouter, createIdentify, PaymentSettings, sameOriginOnly, sendAccountError } from './accounts/account-router';
+import { PlanId } from './accounts/plans';
 
 /**
  * The web app's backend, served by the pipeline itself.
@@ -36,6 +39,12 @@ export interface WebSettings {
 export interface WebDeps {
   store: DataStore;
   settings: WebSettings;
+  /**
+   * Accounts, plans and daily limits. Without it the site works as before:
+   * no sign-in and no daily limit.
+   */
+  accounts?: AccountService;
+  payment?: PaymentSettings;
   analyze: (request: AnalysisRequest) => Promise<AnalysisResponse>;
   chat: (request: ChatRequest, jobId: string) => Promise<ChatResponse>;
   logError: (event: string, error: unknown) => void;
@@ -100,8 +109,39 @@ export function createWebRouter(deps: WebDeps): Router {
   // guesser who changes address still gets only a few tries.
   const adminFailures = new RateLimiter(ADMIN_MAX_FAILURES, ADMIN_FAILURE_WINDOW_MS);
 
+  const accounts = deps.accounts;
+  const identify = accounts ? createIdentify(accounts, settings.trustedProxyHops) : null;
+  if (accounts) {
+    router.use(
+      createAccountRouter({
+        accounts,
+        store,
+        logError: deps.logError,
+        settings: { trustedProxyHops: settings.trustedProxyHops, payment: deps.payment ?? { mode: 'manual' } },
+      })
+    );
+  }
+
+  /** True when the request carries the admin password; otherwise answers and returns false. */
+  const checkAdmin = (req: Request, res: Response): boolean => {
+    if (!settings.adminPassword) {
+      res.status(503).json({ error: 'Máy chủ chưa đặt mật khẩu quản trị (biến ADMIN_PASSWORD).' });
+      return false;
+    }
+    const password = (req.body as Record<string, unknown> | undefined)?.password;
+    if (typeof password !== 'string' || !secretsMatch(password, settings.adminPassword)) {
+      if (adminFailures.hit('all') > 0) {
+        res.status(429).json({ error: 'Có quá nhiều lần nhập sai mật khẩu. Vui lòng thử lại sau.' });
+        return false;
+      }
+      res.status(401).json({ error: 'Unauthorized' });
+      return false;
+    }
+    return true;
+  };
+
   // ─── analyze-content ───────────────────────────────────────────────────
-  router.post('/functions/v1/analyze-content', analysisLimit, async (req: Request, res: Response) => {
+  router.post('/functions/v1/analyze-content', sameOriginOnly, analysisLimit, async (req: Request, res: Response) => {
     const body = (req.body ?? {}) as Record<string, unknown>;
     const text = typeof body.text === 'string' ? body.text.trim() : '';
     const imageBase64 = typeof body.imageBase64 === 'string' && body.imageBase64 ? body.imageBase64 : null;
@@ -130,6 +170,26 @@ export function createWebRouter(deps: WebDeps): Router {
       image = { data, contentType };
     }
 
+    // Daily allowance: taken before the analysis, given back if it fails.
+    let identity: Identity | null = null;
+    let release: (() => Promise<void>) | null = null;
+    if (accounts && identify) {
+      try {
+        identity = await identify(req, res);
+        release = await accounts.reserveAnalysis(identity);
+      } catch (error) {
+        sendAccountError(res, error, deps.logError, 'web.quota_failed');
+        return;
+      }
+    }
+    const giveBack = async () => {
+      try {
+        await release?.();
+      } catch (error) {
+        deps.logError('web.quota_release_failed', error);
+      }
+    };
+
     let result;
     try {
       const response = await deps.analyze(
@@ -139,6 +199,7 @@ export function createWebRouter(deps: WebDeps): Router {
       const outcome = mapPipelineResponse(JSON.parse(JSON.stringify(response)) as PipelineResponse);
 
       if (outcome.kind === 'unreadable_image') {
+        await giveBack();
         res.status(422).json({
           error: 'Không đọc được chữ trong ảnh. Hãy thử ảnh rõ hơn hoặc dán nội dung dạng văn bản.',
         });
@@ -146,6 +207,7 @@ export function createWebRouter(deps: WebDeps): Router {
       }
       result = outcome.result;
     } catch (error) {
+      await giveBack();
       const timedOut = error instanceof Error && error.message === 'Analysis timeout';
       if (!timedOut) deps.logError('web.analyze_failed', error);
       res
@@ -178,6 +240,7 @@ export function createWebRouter(deps: WebDeps): Router {
         risk_level: result.riskLevel,
         ai_result: result.explanation,
         dangerous_phrases: result.dangerousPhrases ?? [],
+        account_id: identity?.kind === 'account' ? identity.account.id : null,
       });
       await store.insertLog({
         session_id: sessionId,
@@ -189,6 +252,14 @@ export function createWebRouter(deps: WebDeps): Router {
       deps.logError('web.save_failed', error);
     }
 
+    if (accounts && identity) {
+      try {
+        res.status(200).json({ ...result, usage: await accounts.usage(identity) });
+        return;
+      } catch (error) {
+        deps.logError('web.usage_failed', error);
+      }
+    }
     res.status(200).json(result);
   });
 
@@ -214,26 +285,69 @@ export function createWebRouter(deps: WebDeps): Router {
 
   // ─── admin-data ────────────────────────────────────────────────────────
   router.post('/functions/v1/admin-data', adminLimit, async (req: Request, res: Response) => {
-    if (!settings.adminPassword) {
-      res.status(503).json({ error: 'Máy chủ chưa đặt mật khẩu quản trị (biến ADMIN_PASSWORD).' });
-      return;
-    }
-
-    const password = (req.body as Record<string, unknown> | undefined)?.password;
-    if (typeof password !== 'string' || !secretsMatch(password, settings.adminPassword)) {
-      if (adminFailures.hit('all') > 0) {
-        res.status(429).json({ error: 'Có quá nhiều lần nhập sai mật khẩu. Vui lòng thử lại sau.' });
-        return;
-      }
-      res.status(401).json({ error: 'Unauthorized' });
-      return;
-    }
+    if (!checkAdmin(req, res)) return;
 
     try {
-      res.status(200).json(await store.getAdminData());
+      const data = await store.getAdminData();
+      res.status(200).json(accounts ? { ...data, ...(await accounts.adminOverview()) } : data);
     } catch (error) {
       deps.logError('web.admin_failed', error);
       res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  // ─── admin-action: manage accounts, orders and business requests ───────
+  router.post('/functions/v1/admin-action', adminLimit, async (req: Request, res: Response) => {
+    if (!checkAdmin(req, res)) return;
+    if (!accounts) {
+      res.status(404).json({ error: 'Máy chủ chưa bật tài khoản.' });
+      return;
+    }
+
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    try {
+      switch (body.action) {
+        case 'confirm_order':
+        case 'cancel_order': {
+          const code = typeof body.code === 'string' ? body.code.toUpperCase() : '';
+          const order = code ? await accounts.store.findOrderByCode(code) : null;
+          if (!order) throw new AccountError('Không tìm thấy đơn.', 404, 'ORDER_NOT_FOUND');
+          if (body.action === 'confirm_order') await accounts.confirmOrder(order, 'admin');
+          else await accounts.cancelOrder(order);
+          break;
+        }
+        case 'set_plan': {
+          const accountId = typeof body.accountId === 'string' ? body.accountId : '';
+          const account = accountId ? await accounts.store.findAccountById(accountId) : null;
+          if (!account) throw new AccountError('Không tìm thấy tài khoản.', 404, 'ACCOUNT_NOT_FOUND');
+          const plan = body.plan as PlanId;
+          if (plan !== 'free' && plan !== 'premium' && plan !== 'family') {
+            throw new AccountError('Gói không hợp lệ.', 400, 'INVALID_PLAN');
+          }
+          const days = Number(body.days);
+          if (plan !== 'free' && !(Number.isInteger(days) && days >= 1 && days <= 3660)) {
+            throw new AccountError('Số ngày phải từ 1 đến 3660.', 400, 'INVALID_DAYS');
+          }
+          const expires = plan === 'free' ? null : new Date(Date.now() + days * 86_400_000).toISOString();
+          await accounts.store.setPlan(account.id, plan, expires);
+          break;
+        }
+        case 'set_lead_status': {
+          const status = body.status;
+          if (status !== 'new' && status !== 'contacted' && status !== 'closed') {
+            throw new AccountError('Trạng thái không hợp lệ.', 400, 'INVALID_STATUS');
+          }
+          if (typeof body.leadId !== 'string' || !(await accounts.store.setLeadStatus(body.leadId, status))) {
+            throw new AccountError('Không tìm thấy yêu cầu.', 404, 'LEAD_NOT_FOUND');
+          }
+          break;
+        }
+        default:
+          throw new AccountError('Thao tác không hợp lệ.', 400, 'INVALID_ACTION');
+      }
+      res.status(200).json(await accounts.adminOverview());
+    } catch (error) {
+      sendAccountError(res, error, deps.logError, 'web.admin_action_failed');
     }
   });
 

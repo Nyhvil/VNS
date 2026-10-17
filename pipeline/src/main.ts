@@ -12,7 +12,9 @@ import { storeContentToVectorDb } from './rag/rag-analyzer';
 import type { StoredLabel } from './rag/rag-analyzer';
 import { startQueues, stopQueues } from './queue/analysis-queue';
 import { closeRedis } from './queue/redis';
-import { createStore } from './web/create-store';
+import { createAccountStore, createStore } from './web/create-store';
+import { AccountService } from './web/accounts/account-service';
+import type { AccountStore } from './web/accounts/account-store';
 import type { DataStore } from './web/store';
 import { ParsedContent } from './types';
 
@@ -29,12 +31,25 @@ function resolveWebDistDir(config: Config): string {
 }
 
 /** Set up the standalone web server (WEB_ENABLED=true): storage and web app. */
-async function prepareWeb(config: Config): Promise<{ web: AppOptions['web']; store: DataStore | null }> {
-  if (!config.webEnabled) return { web: undefined, store: null };
+async function prepareWeb(
+  config: Config
+): Promise<{ web: AppOptions['web']; store: DataStore | null; accountStore: AccountStore | null }> {
+  if (!config.webEnabled) return { web: undefined, store: null, accountStore: null };
 
   const store = await createStore(config, (attempt, error) =>
     logger.warn({ event: 'web.database_retry', attempt, error: String(error) })
   );
+  const accountStore = config.accountsEnabled ? await createAccountStore(store, config) : null;
+  const accounts = accountStore
+    ? new AccountService(accountStore, { guestDailyLimitPerIp: config.guestDailyLimitPerIp })
+    : undefined;
+  logger.info({ event: 'web.accounts', enabled: !!accounts, payment_mode: config.paymentMode });
+  if (accounts && config.paymentMode === 'demo') {
+    logger.warn({
+      event: 'web.payment_demo',
+      message: 'PAYMENT_MODE=demo: buyers can mark their own orders paid. Do not use with real money.',
+    });
+  }
 
   const distDir = resolveWebDistDir(config);
   const hasWebApp = fs.existsSync(path.join(distDir, 'index.html'));
@@ -64,10 +79,18 @@ async function prepareWeb(config: Config): Promise<{ web: AppOptions['web']; sto
 
   return {
     store,
+    accountStore,
     web: {
       distDir: hasWebApp ? distDir : null,
       deps: {
         store,
+        accounts,
+        payment: {
+          mode: config.paymentMode,
+          bankName: config.paymentBankName,
+          accountNumber: config.paymentAccountNumber,
+          accountName: config.paymentAccountName,
+        },
         analyze: runAnalysis,
         chat: answerQuestion,
         logError: (event, error) =>
@@ -104,7 +127,7 @@ async function start(): Promise<void> {
     logger.error({ event: 'queue.start_failed', error: String(error) });
   }
 
-  const { web, store } = await prepareWeb(config);
+  const { web, store, accountStore } = await prepareWeb(config);
   const app = createApp({ web });
 
   const server = app.listen(config.port, () => {
@@ -118,7 +141,7 @@ async function start(): Promise<void> {
     setReady(false);
 
     server.close(() => {
-      Promise.allSettled([stopQueues(), closeRedis(), store?.close()]).finally(() => {
+      Promise.allSettled([stopQueues(), closeRedis(), (accountStore ? accountStore.close() : Promise.resolve()).then(() => store?.close())]).finally(() => {
         logger.info({ event: 'server.closed' });
         process.exit(0);
       });

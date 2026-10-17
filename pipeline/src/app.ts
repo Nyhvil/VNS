@@ -19,7 +19,7 @@ export interface AppOptions {
 }
 
 /** Addresses that belong to the APIs and must never fall back to index.html. */
-const API_PREFIXES = ['/pipeline/', '/functions/', '/uploads/'];
+const API_PREFIXES = ['/pipeline/', '/functions/', '/uploads/', '/api/'];
 
 export function createApp(options: AppOptions = {}): express.Express {
   const app = express();

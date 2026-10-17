@@ -2,6 +2,9 @@ import * as path from 'path';
 import { DataStore } from './store';
 import { FileStore } from './file-store';
 import { DatabaseSslMode, PostgresStore } from './postgres-store';
+import { AccountStore } from './accounts/account-store';
+import { FileAccountStore } from './accounts/file-account-store';
+import { PostgresAccountStore } from './accounts/postgres-account-store';
 
 export interface StoreSettings {
   databaseUrl?: string;
@@ -46,4 +49,17 @@ export async function createStore(
 
   const reason = lastError instanceof Error ? lastError.message : String(lastError);
   throw new Error(`Cannot use the database in DATABASE_URL: ${reason}`);
+}
+
+/**
+ * Accounts go where the scans go: the same PostgreSQL database, or a file
+ * next to the other data files.
+ */
+export async function createAccountStore(dataStore: DataStore, settings: StoreSettings): Promise<AccountStore> {
+  const store: AccountStore =
+    dataStore instanceof PostgresStore
+      ? new PostgresAccountStore(dataStore.pool)
+      : new FileAccountStore(path.resolve(settings.dataDir ?? './var'));
+  await store.init();
+  return store;
 }

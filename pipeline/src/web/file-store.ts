@@ -120,6 +120,13 @@ export class FileStore implements DataStore {
     };
   }
 
+  async listScansByAccount(accountId: string, limit: number): Promise<ScanRow[]> {
+    return this.scans
+      .filter(s => s.account_id === accountId)
+      .slice(-limit)
+      .reverse();
+  }
+
   async close(): Promise<void> {
     await this.queue;
   }

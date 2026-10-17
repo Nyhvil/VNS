@@ -96,6 +96,17 @@ const configSchema = z.object({
   rateLimitPerIp: z.coerce.number().int().min(1).default(20),
   rateLimitWindowMs: z.coerce.number().int().positive().default(300000),
   rateLimitGlobalPerMinute: z.coerce.number().int().min(0).default(60),
+
+  // Accounts, daily limits and paid plans (web mode only).
+  accountsEnabled: envBoolean(true),
+  // Daily analyses of all visitors without an account behind one address.
+  guestDailyLimitPerIp: z.coerce.number().int().min(1).default(20),
+  // manual: an admin confirms each bank transfer. demo: buyers can mark
+  // their own order paid (presentations only, never with real money).
+  paymentMode: z.enum(['manual', 'demo']).default('manual'),
+  paymentBankName: z.string().optional(),
+  paymentAccountNumber: z.string().optional(),
+  paymentAccountName: z.string().optional(),
 });
 
 export type Config = z.infer<typeof configSchema>;
@@ -164,6 +175,12 @@ function loadConfig(): Config {
     rateLimitPerIp: emptyToUndefined(process.env['RATE_LIMIT_PER_IP']),
     rateLimitWindowMs: emptyToUndefined(process.env['RATE_LIMIT_WINDOW_MS']),
     rateLimitGlobalPerMinute: emptyToUndefined(process.env['RATE_LIMIT_GLOBAL_PER_MINUTE']),
+    accountsEnabled: process.env['ACCOUNTS_ENABLED'],
+    guestDailyLimitPerIp: emptyToUndefined(process.env['GUEST_DAILY_LIMIT_PER_IP']),
+    paymentMode: emptyToUndefined(process.env['PAYMENT_MODE']),
+    paymentBankName: emptyToUndefined(process.env['PAYMENT_BANK_NAME']),
+    paymentAccountNumber: emptyToUndefined(process.env['PAYMENT_ACCOUNT_NUMBER']),
+    paymentAccountName: emptyToUndefined(process.env['PAYMENT_ACCOUNT_NAME']),
   };
 
   const result = configSchema.safeParse(raw);
