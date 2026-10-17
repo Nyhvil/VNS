@@ -4,6 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2, MessageCircleQuestion, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getFunctionErrorMessage } from "@/lib/functionError";
+import { renderChatText } from "@/lib/chatText";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -91,7 +92,7 @@ const ScamChat = ({ content, verdict }: ScamChatProps) => {
                   ? "bg-brand/10 text-foreground ml-8"
                   : "bg-muted/50 text-foreground mr-8 border border-border"
               }`}>
-              {message.content}
+              {message.role === "assistant" ? renderChatText(message.content) : message.content}
               {message.role === "assistant" && !!message.sourceCount && (
                 <p className="mt-2 text-xs text-muted-foreground">
                   Dựa trên {message.sourceCount} mẫu lừa đảo tương tự trong cơ sở dữ liệu.

@@ -99,3 +99,21 @@ describe('RAG chatbot', () => {
     expect(context).toContain('Trúng thưởng giả');
   });
 });
+
+describe('trimToLastSentence()', () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { trimToLastSentence } = require('../../chat/chat-service');
+
+  it('should keep the complete sentences of an answer cut off by the token limit', () => {
+    expect(trimToLastSentence('Đây là tin lừa đảo. Bạn hãy gọi ngân hàng. Sau đó đổi mật')).toBe(
+      'Đây là tin lừa đảo. Bạn hãy gọi ngân hàng. …'
+    );
+  });
+
+  it('should keep the text when no sentence ends late enough', () => {
+    expect(trimToLastSentence('Đây là tin nhắn lừa đảo giả mạo ngân hàng. Bạn hãy xử lý ngay bằng cách')).toBe(
+      'Đây là tin nhắn lừa đảo giả mạo ngân hàng. …'
+    );
+    expect(trimToLastSentence('Bạn hãy xử lý')).toBe('Bạn hãy xử lý …');
+  });
+});

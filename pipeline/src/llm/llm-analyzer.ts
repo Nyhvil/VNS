@@ -138,7 +138,8 @@ export async function analyzeWithLlm(
         { role: 'user', content: buildPrompt(content, features, context) },
       ],
       response_format: { type: 'json_object' },
-      max_tokens: 900,
+      // Room for the reasoning of "thinking" models as well as the JSON answer.
+      max_tokens: 4096,
     });
 
     const response = await Promise.race([llmPromise, timeoutPromise]);

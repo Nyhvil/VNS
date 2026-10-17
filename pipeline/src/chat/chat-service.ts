@@ -66,11 +66,26 @@ const CURATED_SOURCE = 'curated';
 const SYSTEM_PROMPT = `Bạn là trợ lý an toàn số của VNS – VIỆT NAM SAFE, giúp người dùng Việt Nam nhận biết và phòng tránh lừa đảo trực tuyến.
 
 Quy tắc:
-- Trả lời bằng tiếng Việt, ngắn gọn, dễ hiểu với người không rành công nghệ.
+- Trả lời bằng tiếng Việt, ngắn gọn (dưới 150 từ), dễ hiểu với người không rành công nghệ.
+- Viết văn bản thường: không dùng ký hiệu định dạng như **, #, hay bảng. Khi liệt kê các bước, mỗi bước một dòng, bắt đầu bằng "- ".
 - Dựa vào phần "Ngữ cảnh" được cung cấp (kết quả phân tích, mẫu lừa đảo tương tự, kiến thức về các hình thức lừa đảo). Nếu ngữ cảnh không đủ để trả lời, hãy nói rõ là bạn không chắc.
 - Chỉ trả lời về an toàn số và phòng chống lừa đảo. Với câu hỏi ngoài phạm vi, hãy từ chối lịch sự.
 - Không bao giờ yêu cầu người dùng cung cấp mật khẩu, mã OTP, số thẻ hay giấy tờ tùy thân.
 - Khi người dùng có thể đã bị lừa, hướng dẫn họ liên hệ ngân hàng qua số tổng đài chính thức và trình báo cơ quan công an.`;
+
+const CHAT_MAX_TOKENS = 4096;
+
+/**
+ * An answer cut off by the token limit: keep the complete sentences (or
+ * lines) and mark that something was left out, rather than stopping mid-word.
+ */
+export function trimToLastSentence(text: string): string {
+  const trimmed = text.trim();
+  if (!trimmed) return trimmed;
+  const ends = [...trimmed.matchAll(/[.!?…](?=\s|$)|\n/g)].map(m => (m.index ?? 0) + 1);
+  const cut = ends.filter(i => i >= trimmed.length * 0.3).pop();
+  return `${(cut ? trimmed.slice(0, cut) : trimmed).trim()} …`;
+}
 
 async function retrieveSources(queryText: string, jobId: string): Promise<ChatSource[]> {
   const config = getConfig();
@@ -172,11 +187,16 @@ export async function answerQuestion(request: ChatRequest, jobId: string): Promi
       ...(request.history ?? []).map(turn => ({ role: turn.role, content: sanitizePii(turn.content) })),
       { role: 'user', content: `Ngữ cảnh:\n${context}\n\nCâu hỏi: ${sanitizePii(request.question)}` },
     ],
-    max_tokens: 700,
+    // Generous: with "thinking" models (Gemini 2.5 and later) the model's
+    // reasoning counts towards this limit too, and a tight limit cuts the
+    // visible answer off mid-sentence.
+    max_tokens: CHAT_MAX_TOKENS,
   });
 
   const response = await Promise.race([completion, timeoutPromise]);
-  const answer = response.choices[0]?.message?.content?.trim() ?? '';
+  const choice = response.choices[0];
+  let answer = choice?.message?.content?.trim() ?? '';
+  if (choice?.finish_reason === 'length') answer = trimToLastSentence(answer);
 
   if (!answer) {
     throw new Error('The model returned an empty answer');
