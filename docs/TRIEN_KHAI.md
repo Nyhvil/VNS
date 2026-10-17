@@ -102,8 +102,32 @@ Chưa bật thì lớp này hiện "không có tín hiệu" và trọng số c�
 | `RATE_LIMIT_WINDOW_MS` | `300000` | Độ dài cửa sổ, tính bằng mili giây (mặc định 5 phút). |
 | `RATE_LIMIT_GLOBAL_PER_MINUTE` | `60` | Tổng số lượt phân tích và câu hỏi chatbot mỗi phút của mọi người cộng lại. `0` để tắt. |
 | `PIPELINE_API_KEY` | bắt buộc | Khoá của API `/pipeline/*`. Trang web không dùng khoá này. |
+| `ACCOUNTS_ENABLED` | `true` | Tài khoản, giới hạn lượt mỗi ngày và gói trả phí. `false` để quay về trang không có đăng nhập. |
+| `GUEST_DAILY_LIMIT_PER_IP` | `20` | Tổng lượt mỗi ngày của mọi khách chưa đăng nhập dùng chung một địa chỉ IP. |
+| `PAYMENT_MODE` | `manual` | `manual`: admin xác nhận từng đơn chuyển khoản. `demo`: người mua tự bấm "Thanh toán thử", chỉ dùng khi thuyết trình. |
+| `PAYMENT_BANK_NAME`, `PAYMENT_ACCOUNT_NUMBER`, `PAYMENT_ACCOUNT_NAME` | trống | Tài khoản nhận tiền hiện ở trang thanh toán. |
 
 Các biến còn lại (Qdrant, Redis, dịch vụ ML) giống hệt khi chạy pipeline riêng, xem `pipeline/.env.example`.
+
+## Tài khoản, lượt kiểm tra và gói trả phí
+
+| Ai | Lượt kiểm tra mỗi ngày |
+| --- | --- |
+| Khách chưa đăng nhập | 5 (đếm theo cookie trình duyệt, kèm trần chung theo địa chỉ IP) |
+| Tài khoản Miễn phí | 10 |
+| Gói Nâng cao (29.000 VND/tháng) | Không giới hạn |
+| Gói Gia đình (109.000 VND/tháng) | Không giới hạn, cho chủ gói và tối đa 4 thành viên |
+
+- Lượt được làm mới lúc 00:00 giờ Việt Nam (UTC+7). Chỉ lượt phân tích thành công mới bị trừ.
+- Các trang: `/dang-ky`, `/dang-nhap`, `/bang-gia`, `/thanh-toan/<mã đơn>`, `/tai-khoan`.
+- Mật khẩu băm bằng scrypt; phiên đăng nhập là cookie HttpOnly, SameSite=Lax, giữ 30 ngày. Một email nhập sai 10 lần bị khoá 15 phút.
+- Thanh toán: người mua chọn gói và số tháng, nhận mã đơn dạng `VNSXXXXXX` và thông tin chuyển khoản. Admin đối chiếu nội dung chuyển khoản trong tab **Thanh toán** của `/admin` rồi bấm **Xác nhận**; gói kích hoạt ngay. Mua lại gói đang dùng thì cộng thêm vào sau ngày hết hạn; mua gói khác thì gói mới tính từ lúc xác nhận.
+- Gói doanh nghiệp (AI Agent, Website, ERP) không bán trực tiếp: trang bảng giá có form liên hệ, yêu cầu hiện ở tab **Doanh nghiệp** của `/admin`.
+- Tab **Người dùng** của `/admin` cho xem gói, lượt hôm nay, và tặng hoặc thu hồi gói cho một tài khoản.
+- Tài khoản lưu cùng nơi với dữ liệu kiểm tra: PostgreSQL nếu có `DATABASE_URL`, ngược lại là tệp `accounts.json` trong `DATA_DIR`.
+- Chưa có: đặt lại mật khẩu qua email, đăng nhập Google, thanh toán tự động.
+
+Tính năng tài khoản chỉ có ở bản máy chủ tự chạy. Bản Lovable (Supabase) không đổi.
 
 ## Giới hạn tần suất
 

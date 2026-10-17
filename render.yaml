@@ -40,6 +40,18 @@ services:
       - key: GEMINI_API_KEY
         sync: false
 
+      # Thanh toán: manual = admin xác nhận chuyển khoản trong /admin.
+      # Đổi thành demo khi thuyết trình để người mua tự bấm "Thanh toán thử".
+      - key: PAYMENT_MODE
+        value: manual
+      # Tài khoản nhận tiền hiện ở trang thanh toán (Render hỏi khi tạo dịch vụ).
+      - key: PAYMENT_BANK_NAME
+        sync: false
+      - key: PAYMENT_ACCOUNT_NUMBER
+        sync: false
+      - key: PAYMENT_ACCOUNT_NAME
+        sync: false
+
       # Số máy chủ trung gian đứng trước dịch vụ, để giới hạn tần suất đếm
       # đúng địa chỉ người dùng. Xem mục "Giới hạn tần suất" trong hướng dẫn.
       - key: TRUSTED_PROXY_HOPS

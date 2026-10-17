@@ -126,6 +126,7 @@ supabase/
   migrations/                  Cấu trúc cơ sở dữ liệu
 pipeline/                      Dịch vụ phân tích nhiều lớp (Node.js)
   src/web/                     Bản máy chủ tự chạy: /functions/v1/*, lưu dữ liệu, giới hạn tần suất
+  src/web/accounts/            Tài khoản, lượt mỗi ngày, gói trả phí, đơn thanh toán, gia đình
 ml-service/                    Dịch vụ PhoBERT / DistilBERT và PaddleOCR (FastAPI)
 docs/                          Kiến trúc, đối chiếu công nghệ, hướng dẫn chạy, hướng dẫn triển khai
 docker-compose.yml             Qdrant, Redis, pipeline, dịch vụ ML
@@ -164,6 +165,8 @@ npm run build:all        # build giao diện và pipeline
 # tạo pipeline/.env với PIPELINE_API_KEY, WEB_ENABLED=true, ADMIN_PASSWORD
 npm start                # mở http://localhost:3001
 ```
+
+Bản này có thêm tài khoản người dùng: khách 5 lượt kiểm tra mỗi ngày, tài khoản miễn phí 10 lượt, gói Nâng cao (29.000 VND/tháng) và Gia đình (109.000 VND/tháng) không giới hạn, trang bảng giá, thanh toán chuyển khoản do admin xác nhận và form liên hệ gói doanh nghiệp.
 
 Đưa bản này lên một địa chỉ công khai: xem [docs/TRIEN_KHAI.md](docs/TRIEN_KHAI.md).
 
