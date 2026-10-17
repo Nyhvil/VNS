@@ -9,6 +9,17 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { getFunctionErrorMessage, getFunctionErrorStatus } from "@/lib/functionError";
 import { describeAdminError } from "@/lib/adminError";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AccountStats,
+  AccountStatsRow,
+  AccountsTable,
+  AdminAccountRow,
+  AdminLeadRow,
+  AdminOrderRow,
+  LeadsTable,
+  OrdersTable,
+} from "@/components/admin/AdminAccounts";
 import {
   Shield, Users, BarChart3, Loader2, ImageIcon, FileText, Lock, UserCheck, RefreshCw,
   Hash, Percent, Type, ThumbsUp, ThumbsDown,
@@ -23,6 +34,14 @@ interface ScanRow {
   image_url: string | null;
   risk_level: string;
   ai_result: string;
+  account_id?: string | null;
+}
+
+interface AccountsData {
+  accountStats: AccountStats;
+  accounts: AdminAccountRow[];
+  orders: AdminOrderRow[];
+  leads: AdminLeadRow[];
 }
 
 interface Stats {
@@ -47,6 +66,27 @@ const Admin = () => {
   const [error, setError] = useState("");
   const [stats, setStats] = useState<Stats | null>(null);
   const [scans, setScans] = useState<ScanRow[]>([]);
+  const [accountsData, setAccountsData] = useState<AccountsData | null>(null);
+  const [actionBusy, setActionBusy] = useState(false);
+  const [actionError, setActionError] = useState("");
+
+  const applyAccounts = (data: Partial<AccountsData> | null | undefined) => {
+    if (data?.accountStats && data.accounts && data.orders && data.leads) setAccountsData(data as AccountsData);
+  };
+
+  /** Run an admin action (confirm an order, change a plan...) and show the new data. */
+  const act = async (action: string, payload: Record<string, unknown>) => {
+    setActionBusy(true);
+    setActionError("");
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("admin-action", { body: { password, action, ...payload } });
+      if (fnError) throw fnError;
+      applyAccounts(data);
+    } catch (err) {
+      setActionError(await getFunctionErrorMessage(err, "Thao tác không thành công."));
+    }
+    setActionBusy(false);
+  };
 
   const handleLogin = async () => {
     setLoading(true);
@@ -63,6 +103,7 @@ const Admin = () => {
       }
       setStats(data.stats);
       setScans(data.scans || []);
+      applyAccounts(data);
       setAuthenticated(true);
     } catch (err) {
       const status = getFunctionErrorStatus(err);
@@ -71,6 +112,8 @@ const Admin = () => {
     }
     setLoading(false);
   };
+
+  const accountEmails = new Map((accountsData?.accounts ?? []).map(a => [a.id, a.email]));
 
   const getRiskBadge = (level: string) => {
     switch (level) {
@@ -116,6 +159,29 @@ const Admin = () => {
       </header>
 
       <main className="container mx-auto max-w-6xl px-4 py-8 space-y-6">
+        <Tabs defaultValue="stats" className="space-y-6">
+        {accountsData && (
+          <>
+            <TabsList className="flex h-auto flex-wrap justify-start">
+              <TabsTrigger value="stats">Thống kê kiểm tra</TabsTrigger>
+              <TabsTrigger value="accounts">Người dùng ({accountsData.accountStats.totalAccounts})</TabsTrigger>
+              <TabsTrigger value="orders">Thanh toán ({accountsData.accountStats.pendingOrders} chờ)</TabsTrigger>
+              <TabsTrigger value="leads">Doanh nghiệp ({accountsData.accountStats.newLeads} mới)</TabsTrigger>
+            </TabsList>
+            <AccountStatsRow stats={accountsData.accountStats} />
+            {actionError && <p role="alert" className="text-sm text-red-500">{actionError}</p>}
+            <TabsContent value="accounts">
+              <AccountsTable rows={accountsData.accounts} act={act} busy={actionBusy} />
+            </TabsContent>
+            <TabsContent value="orders">
+              <OrdersTable rows={accountsData.orders} act={act} busy={actionBusy} />
+            </TabsContent>
+            <TabsContent value="leads">
+              <LeadsTable rows={accountsData.leads} act={act} busy={actionBusy} />
+            </TabsContent>
+          </>
+        )}
+        <TabsContent value="stats" className="space-y-6">
         {/* Stats row 1 */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           <Card>
@@ -211,7 +277,7 @@ const Admin = () => {
                     <TableRow>
                       <TableHead>Thời gian</TableHead>
                       <TableHead>Loại</TableHead>
-                      <TableHead>Session</TableHead>
+                      <TableHead>Người kiểm tra</TableHead>
                       <TableHead>Nội dung</TableHead>
                       <TableHead>Ảnh</TableHead>
                       <TableHead className="text-right">Kết quả</TableHead>
@@ -228,8 +294,8 @@ const Admin = () => {
                             {row.type === "image" ? "🖼️ Ảnh" : "📝 Text"}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-xs font-mono max-w-[80px] truncate">
-                          {row.session_id?.substring(0, 8)}
+                        <TableCell className="text-xs max-w-[180px] truncate">
+                          {(row.account_id && accountEmails.get(row.account_id)) || `Khách ${row.session_id?.substring(0, 8)}`}
                         </TableCell>
                         <TableCell className="max-w-[250px] truncate text-xs">
                           {row.content_text || "—"}
@@ -249,6 +315,8 @@ const Admin = () => {
             )}
           </CardContent>
         </Card>
+        </TabsContent>
+        </Tabs>
       </main>
     </div>
   );

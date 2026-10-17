@@ -29,3 +29,17 @@ export function getFunctionErrorStatus(error: unknown): number | null {
   const status = (context as { status?: unknown } | null | undefined)?.status;
   return typeof status === "number" ? status : null;
 }
+
+/** The { error, code } body of a failed function call, when there is one. */
+export async function getFunctionErrorBody(error: unknown): Promise<{ error?: string; code?: string } | null> {
+  const context = (error as { context?: unknown } | null)?.context;
+  if (context && typeof (context as Response).json === "function") {
+    try {
+      const body = await (context as Response).clone().json();
+      return body && typeof body === "object" ? body : null;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}

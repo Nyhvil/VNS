@@ -1,17 +1,20 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Shield, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { generateSessionId, getUserId } from "@/lib/scamAnalyzer";
 import ImageUpload from "@/components/ImageUpload";
 import AnalysisResult from "@/components/AnalysisResult";
 import { useToast } from "@/hooks/use-toast";
-import { getFunctionErrorMessage } from "@/lib/functionError";
+import { getFunctionErrorBody, getFunctionErrorMessage } from "@/lib/functionError";
+import SiteHeader, { UsageText } from "@/components/SiteHeader";
+import QuotaDialog from "@/components/QuotaDialog";
+import { useAccount } from "@/hooks/useAccount";
+import type { Usage } from "@/lib/api";
 import type { PipelineInfo } from "@/components/LayerBreakdown";
-import vnsLogo from "@/assets/vns-logo.png";
 
 interface AnalysisResponse {
   riskLevel: string;
@@ -27,6 +30,8 @@ interface AnalysisResponse {
   scamPatternsMatched?: { name: string; risk: number; keywords: string[] }[];
   engine?: "pipeline" | "builtin";
   pipeline?: PipelineInfo;
+  /** Today's allowance after this analysis (VNS server only). */
+  usage?: Usage;
 }
 
 const Index = () => {
@@ -37,6 +42,8 @@ const Index = () => {
   const [analyzedText, setAnalyzedText] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { toast } = useToast();
+  const { enabled: accountsEnabled, account, setUsage, refresh } = useAccount();
+  const [quotaMessage, setQuotaMessage] = useState<string | null>(null);
 
   const handleAnalyze = async () => {
     if (!emailContent.trim() && !imageBase64) return;
@@ -58,7 +65,14 @@ const Index = () => {
       if (error) throw error;
       setAnalyzedText(emailContent.trim());
       setResult(data as AnalysisResponse);
+      if ((data as AnalysisResponse).usage) setUsage((data as AnalysisResponse).usage as Usage);
     } catch (err: unknown) {
+      const body = await getFunctionErrorBody(err);
+      if (body?.code === "QUOTA_EXCEEDED") {
+        setQuotaMessage(body.error ?? "Bạn đã dùng hết lượt kiểm tra hôm nay.");
+        void refresh();
+        return;
+      }
       console.error("Analysis error:", err);
       toast({
         title: "Lỗi phân tích",
@@ -81,14 +95,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="container mx-auto flex items-center gap-3 px-4 py-3">
-          <h1>
-            <img src={vnsLogo} alt="VnS – Vietnam Safe" className="h-12 w-auto" />
-          </h1>
-          <Badge variant="secondary" className="ml-2 text-xs">AI-Powered</Badge>
-        </div>
-      </header>
+      <SiteHeader />
 
       <main className="container mx-auto max-w-3xl px-4 py-8 space-y-6">
         <div className="text-center space-y-2">
@@ -119,8 +126,20 @@ const Index = () => {
                 <Button variant="outline" onClick={handleReset} disabled={isAnalyzing} className="h-12">Xóa</Button>
               )}
             </div>
+            {accountsEnabled && (
+              <p className="text-center text-xs text-muted-foreground">
+                <UsageText />
+                {!account && (
+                  <>
+                    {" "}· <Link to="/dang-ky" className="text-brand underline">Đăng ký miễn phí</Link> để có 10 lượt mỗi ngày
+                  </>
+                )}
+              </p>
+            )}
           </CardContent>
         </Card>
+
+        <QuotaDialog open={quotaMessage !== null} onOpenChange={open => !open && setQuotaMessage(null)} message={quotaMessage ?? ""} />
 
         {result && (
           <AnalysisResult
