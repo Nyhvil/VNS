@@ -8,13 +8,35 @@ const SUSPICIOUS_TLDS = [
   '.xyz', '.top', '.buzz', '.tk', '.ml', '.ga', '.cf', '.gq', '.click', '.loan',
   '.work', '.racing', '.date', '.download', '.stream', '.bid', '.trade', '.win',
   '.party', '.science', '.review', '.accountant',
+  // Cheap TLDs common in recent Vietnamese scam campaigns
+  '.online', '.site', '.vip', '.icu', '.cyou', '.sbs', '.cfd', '.bond', '.lol', '.mom', '.rest',
 ];
 
 /** Brand names that scammers commonly put inside look-alike domains. */
 const IMPERSONATION_TARGETS = [
   'vietcombank', 'techcombank', 'bidv', 'agribank', 'vpbank', 'mbbank', 'momo',
   'zalopay', 'shopee', 'lazada', 'tiki', 'vnpay', 'viettel',
+  'vietinbank', 'sacombank', 'hdbank', 'tpbank', 'seabank', 'lpbank', 'acb', 'vib', 'shb', 'msb', 'ocb', 'vcb',
+  'zalo', 'facebook', 'fb', 'messenger', 'tiktok', 'google', 'apple', 'icloud', 'netflix', 'grab',
+  'evn', 'vneid', 'dichvucong', 'etax', 'gdt', 'ghtk', 'ghn', 'vnpost', 'mobifone', 'vinaphone', 'vnpt',
 ];
+
+/**
+ * Words scam domains add to look official or urgent: xac-minh (verify),
+ * hoan-tien (refund), nang-cap (upgrade)... A real organisation does not put
+ * them in its domain name.
+ */
+const DECEPTIVE_DOMAIN_WORDS = [
+  'xacminh', 'xacthuc', 'xacnhan', 'hoantien', 'hoanthue', 'nangcap', 'mokhoa', 'khoatk', 'thanhtoan',
+  'giaolai', 'hanmuc', 'nhanqua', 'tangqua', 'khuyenmai', 'trian', 'hotro', 'support', 'verify', 'secure',
+  'login', 'dangnhap', 'update', 'capnhat', 'kyc', 'dinhdanh', 'nhanthuong', 'trungthuong',
+];
+
+/** True when `brand` appears in the host as a whole label part ("bidv-xacminh") or, for long names, anywhere. */
+function hostMentions(host: string, word: string): boolean {
+  if (word.length >= 5) return host.includes(word);
+  return host.split(/[.-]/).includes(word);
+}
 
 const SHORTENERS = [
   'bit.ly', 'tinyurl.com', 't.co', 'goo.gl', 'is.gd', 'v.gd', 's.id', 'rb.gy',
@@ -63,10 +85,17 @@ export function checkUrlSafety(url: string, officialDomains: string[] = OFFICIAL
   }
 
   for (const brand of IMPERSONATION_TARGETS) {
-    if (hostname.includes(brand)) {
+    if (hostMentions(hostname, brand)) {
       flags.impersonated_brands.push(brand);
       reasons.push(`Có thể giả mạo ${brand}`);
     }
+  }
+
+  const compactHost = hostname.replace(/[.-]/g, '');
+  const deceptive = DECEPTIVE_DOMAIN_WORDS.filter(word => compactHost.includes(word));
+  if (deceptive.length > 0) {
+    flags.deceptive_words = deceptive;
+    reasons.push(`Tên miền chứa từ dễ gây hiểu nhầm: ${deceptive.join(', ')}`);
   }
 
   if (SHORTENERS.includes(hostname)) {

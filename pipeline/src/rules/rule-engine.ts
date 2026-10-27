@@ -10,6 +10,8 @@ import { suspiciousTldRule } from './definitions/suspicious-tld.rule';
 import { excessiveSubdomainsRule } from './definitions/excessive-subdomains.rule';
 import { entityUnofficialLinkRule } from './definitions/entity-unofficial-link.rule';
 import { scamPatternRule } from './definitions/scam-pattern.rule';
+import { deceptiveDomainRule } from './definitions/deceptive-domain.rule';
+import { scamSignalsRule } from './definitions/scam-signals.rule';
 
 interface Rule {
   id: string;
@@ -29,6 +31,8 @@ const ALL_RULES: Rule[] = [
   excessiveSubdomainsRule,
   entityUnofficialLinkRule,
   scamPatternRule,
+  deceptiveDomainRule,
+  scamSignalsRule,
 ];
 
 // Severity weights for score calculation

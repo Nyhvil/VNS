@@ -135,7 +135,7 @@ describe('Orchestrator — deep path', () => {
   it('should report every layer and the Vietnamese verdict', async () => {
     analyzeWithLlm.mockResolvedValue({
       explanation: 'Giả danh công an để yêu cầu chuyển tiền.',
-      score: 96,
+      score: 100,
       enabled: true,
       succeeded: true,
       dangerous_phrases: ['lệnh bắt'],
@@ -148,9 +148,9 @@ describe('Orchestrator — deep path', () => {
     expect(result.layers?.map(l => l.id)).toEqual(['rag', 'rule', 'header', 'image', 'llm']);
     expect(result.layers?.find(l => l.id === 'rule')?.applied).toBe(true);
     expect(result.layers?.find(l => l.id === 'rag')?.applied).toBe(false);
-    expect(result.risk_score).toBe(96);
+    expect(result.risk_score).toBe(100);
     expect(result.vns).toMatchObject({
-      scam_percent: 96,
+      scam_percent: 100,
       risk_level: 'SCAM',
       explanation: 'Giả danh công an để yêu cầu chuyển tiền.',
       advice: 'Không chuyển tiền.',
@@ -208,6 +208,20 @@ describe('Orchestrator — deep path', () => {
 
     // Rule layer alone gives 0.25 * 85 = 21.25, inside [15, 75)
     await performAnalysis(request(SCAM_TEXT), { ...config, llmMode: 'gray_zone' });
+    expect(analyzeWithLlm).toHaveBeenCalledTimes(1);
+  });
+
+  it('should skip the LLM only for clear scams when LLM_MODE=confident', async () => {
+    analyzeWithLlm.mockResolvedValue({ explanation: 'x', score: 90, enabled: true, succeeded: true });
+    const confident = { ...config, llmMode: 'confident' };
+
+    // The rules already rate this a scam: answer without waiting for the LLM.
+    const clear = await performAnalysis(request(SCAM_TEXT), confident);
+    expect(analyzeWithLlm).not.toHaveBeenCalled();
+    expect(clear.vns?.risk_level).toBe('SCAM');
+
+    // No rule fires on this one, but it may still be a new kind of scam: ask.
+    await performAnalysis(request(SAFE_TEXT), confident);
     expect(analyzeWithLlm).toHaveBeenCalledTimes(1);
   });
 });

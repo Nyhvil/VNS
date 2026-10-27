@@ -96,7 +96,7 @@ Chưa bật thì lớp này hiện "không có tín hiệu" và trọng số c�
 | `DATABASE_SSL` | `auto` | `auto`: mã hoá với mọi máy chủ không phải máy này, không kiểm tra chứng chỉ. `verify`: có kiểm tra chứng chỉ. `require`, `disable`. |
 | `DATA_DIR` | `./var` | Thư mục lưu tệp khi không có PostgreSQL. |
 | `STORE_IMAGES` | `true` | Lưu ảnh người dùng tải lên để trang admin xem lại. Đặt `false` nếu không muốn giữ ảnh. |
-| `LLM_ENABLED`, `LLM_PROVIDER`, `GEMINI_API_KEY`, `LLM_MODE` | xem `pipeline/.env.example` | Lớp LLM. `render.yaml` đặt Gemini, chế độ `always`. |
+| `LLM_ENABLED`, `LLM_PROVIDER`, `GEMINI_API_KEY`, `LLM_MODE` | xem `pipeline/.env.example` | Lớp LLM. `render.yaml` đặt Gemini, chế độ `confident` (bỏ qua LLM khi bộ luật đã chấm từ 80 điểm). |
 | `TRUSTED_PROXY_HOPS` | `0` | Số máy chủ trung gian đứng trước. Xem mục dưới. |
 | `RATE_LIMIT_PER_IP` | `20` | Số lượt phân tích một địa chỉ được gửi trong mỗi cửa sổ. |
 | `RATE_LIMIT_WINDOW_MS` | `300000` | Độ dài cửa sổ, tính bằng mili giây (mặc định 5 phút). |

@@ -75,6 +75,8 @@ export interface UrlSafetyResult {
     shortener: boolean;
     ip_address: boolean;
     many_subdomains: boolean;
+    /** Words such as "xacminh", "hoantien" inside an unofficial domain. */
+    deceptive_words?: string[];
   };
   /** Human-readable reasons, in Vietnamese. */
   reasons: string[];
@@ -219,6 +221,16 @@ export interface FeatureSet {
   dkim_result: 'pass' | 'fail' | 'none' | null;
   /** Findings from the Vietnamese knowledge base. */
   knowledge?: KnowledgeFindings;
+  /** Behavioural scam signals (money request, pressure, code request...). */
+  signals?: ScamSignalFinding[];
+  /** The content is a one-time code sent by a real service (see scam-signals.ts). */
+  one_time_code_notice?: boolean;
+}
+
+export interface ScamSignalFinding {
+  id: string;
+  label: string;
+  matched: string[];
 }
 
 // ============================================================

@@ -1,10 +1,9 @@
 import { ParsedText } from '../types';
+import { extractUrls } from './url-extractor';
 
-const URL_REGEX = /https?:\/\/[^\s<>"{}|\\^`[\]]+/gi;
-
+/** Links in the text, with or without "http://" (see url-extractor.ts). */
 export function extractUrlsFromText(text: string): string[] {
-  const matches = text.match(URL_REGEX) ?? [];
-  return [...new Set(matches)];
+  return extractUrls(text);
 }
 
 export function parsePlainText(content: string): ParsedText {
