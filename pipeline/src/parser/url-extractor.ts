@@ -29,7 +29,8 @@ const BARE_DOMAIN = new RegExp(
     `((?:${LABEL}\\.)+(?:${TLDS.join('|')}))` +
     // Port and path are optional; the path stops at whitespace or quotes.
     `(?::\\d{2,5})?(?:/[^\\s<>"{}|\\\\^\`]*)?` +
-    `(?![\\w-])`,
+    // Not followed by more of a word, or by "@" (the domain-like start of an email).
+    `(?![\\w@-])`,
   'gi'
 );
 
