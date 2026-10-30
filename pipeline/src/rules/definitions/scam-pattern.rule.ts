@@ -27,6 +27,10 @@ export const scamPatternRule = {
       severity = 'medium';
     }
 
+    // News about scams and notices that only point to official channels share
+    // the topic of a scam pattern, not its intent.
+    if (features.scam_warning || features.official_notice) severity = 'low';
+
     const top = (strong.length > 0 ? strong : patterns).slice(0, 3);
 
     return {
