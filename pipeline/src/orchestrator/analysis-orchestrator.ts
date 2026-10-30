@@ -20,7 +20,7 @@ import { analyzeWithRag, storeContentToVectorDb } from '../rag/rag-analyzer';
 import type { StoredLabel } from '../rag/rag-analyzer';
 import { analyzeWithLlm } from '../llm/llm-analyzer';
 import { classifyWithMl, ML_UNAVAILABLE } from '../ml/ml-client';
-import { aggregateScores } from '../scoring/score-aggregator';
+import { aggregateScores, computeWeightedScore } from '../scoring/score-aggregator';
 import { LAYER_WEIGHTS } from '../scoring/weights';
 import { mapToRiskLevel } from '../scoring/risk-level-mapper';
 import { computeImageRiskScore } from '../scoring/image-risk';
@@ -221,6 +221,9 @@ function scheduleVectorStore(content: ParsedContent, jobId: string, score: numbe
 }
 
 /** The full analysis of one request, without cache, queue or overall timeout. */
+/** In confident mode, scores from here up (SCAM level) do not wait for the LLM. */
+export const CONFIDENT_SCAM_SCORE = 80;
+
 export async function performAnalysis(
   request: AnalysisRequest,
   config: ReturnType<typeof getConfig> = getConfig()
@@ -299,9 +302,21 @@ export async function performAnalysis(
     LAYER_WEIGHTS.header * headerScore +
     LAYER_WEIGHTS.image * parseResult.imageScore;
 
+  // confident mode skips the LLM only when the other layers already agree the
+  // content is a scam (same formula as the final score, without the LLM). Low
+  // scores still go to the LLM: new kinds of scams often trip no rule at all.
+  const scoreWithoutLlm = () =>
+    computeWeightedScore(
+      { rule: ruleResult, rag: ragResult, llm: EMPTY_LLM_RESULT, header_score: headerScore, image_score: imageRisk },
+      { ragThreshold: config.ragSimilarityThreshold }
+    );
+
   const shouldCallLlm =
     llmCanRun &&
-    (config.llmMode === 'always' || (preliminaryScore >= 15 && preliminaryScore < 75));
+    (config.llmMode === 'always' ||
+      (config.llmMode === 'confident'
+        ? scoreWithoutLlm() < CONFIDENT_SCAM_SCORE
+        : preliminaryScore >= 15 && preliminaryScore < 75));
 
   let llmResult: LlmResult = EMPTY_LLM_RESULT;
 

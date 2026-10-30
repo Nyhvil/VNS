@@ -13,7 +13,8 @@
     "test:property": "jest --testPathPattern=property --runInBand --forceExit",
     "test:integration": "jest --testPathPattern=integration --runInBand --forceExit",
     "test:e2e": "jest --testPathPattern=e2e --runInBand --forceExit",
-    "test:ci": "jest --runInBand --forceExit"
+    "test:ci": "jest --runInBand --forceExit",
+    "eval": "node dist/scripts/evaluate-rules.js"
   },
   "dependencies": {
     "@qdrant/js-client-rest": "^1.17.0",

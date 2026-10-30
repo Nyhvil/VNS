@@ -5,9 +5,9 @@ import { containsKeyword, prepareText } from '../../knowledge/text-match';
 
 describe('Knowledge base', () => {
   describe('data files', () => {
-    it('should hold the 16 scam patterns and 23 official domains', () => {
+    it('should hold the 16 scam patterns and 55 official domains', () => {
       expect(SCAM_PATTERNS).toHaveLength(16);
-      expect(OFFICIAL_DOMAINS).toHaveLength(23);
+      expect(OFFICIAL_DOMAINS).toHaveLength(55);
     });
 
     // The web app's built-in analysis keeps its own copy of the two files.

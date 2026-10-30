@@ -1,6 +1,8 @@
 import { simpleParser, ParsedMail } from 'mailparser';
 import { ParsedEmail } from '../types';
 
+import { extractUrls } from './url-extractor';
+
 const URL_REGEX = /https?:\/\/[^\s<>"{}|\\^`[\]]+/gi;
 
 function extractUrlsFromText(text: string): string[] {
@@ -65,7 +67,8 @@ export async function parseEmail(content: string): Promise<ParsedEmail> {
 
   const htmlText = typeof parsed.html === 'string' ? parsed.html.replace(/<[^>]+>/g, ' ') : '';
   const bodyText = parsed.text ?? htmlText ?? '';
-  const urls = extractUrlsFromText(bodyText);
+  // Plain-text body: links with or without a scheme. HTML: only real hrefs.
+  const urls = extractUrls(bodyText);
 
   // Also extract URLs from HTML if available
   if (typeof parsed.html === 'string') {

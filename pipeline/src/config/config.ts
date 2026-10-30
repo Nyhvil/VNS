@@ -45,9 +45,12 @@ const configSchema = z.object({
   llmVisionModel: z.string().optional(),
   llmReasoningEffort: z.enum(['off', 'low', 'medium', 'high']).optional(),
   llmTimeoutMs: z.coerce.number().int().positive().default(15000),
-  // gray_zone: ask the LLM only when the other layers are undecided (score in
-  // [15, 75)). always: ask it for every content that takes the deep path.
-  llmMode: z.enum(['gray_zone', 'always']).default('gray_zone'),
+  // always: ask the LLM for every content that takes the deep path.
+  // confident: skip it when the other layers already score the content as a
+  //   scam (>= 80); everything else still goes to the LLM. Faster on obvious
+  //   scams without missing the ones no rule catches.
+  // gray_zone: ask it only when the weighted preliminary score is in [15, 75).
+  llmMode: z.enum(['gray_zone', 'always', 'confident']).default('gray_zone'),
 
   // ML service (PhoBERT / DistilBERT classifier, PaddleOCR)
   mlServiceUrl: z.string().url().optional(),

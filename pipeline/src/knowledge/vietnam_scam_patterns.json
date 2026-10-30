@@ -66,7 +66,7 @@
     {
       "id": "sim_swap",
       "name": "Chiếm đoạt SIM / nâng cấp SIM",
-      "keywords": ["nâng cấp SIM", "SIM 4G", "SIM 5G", "hết hạn SIM", "khóa SIM", "cung cấp mã"],
+      "keywords": ["nâng cấp SIM", "SIM 4G", "SIM 5G", "hết hạn SIM", "khóa SIM", "cung cấp mã", "eSIM", "chuẩn hóa thông tin", "chuẩn hóa thuê bao", "soạn tin theo cú pháp", "đổi SIM"],
       "description": "Giả danh nhà mạng yêu cầu nâng cấp SIM để chiếm đoạt số điện thoại",
       "risk_weight": 85
     },

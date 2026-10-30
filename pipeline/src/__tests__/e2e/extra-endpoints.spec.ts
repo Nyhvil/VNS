@@ -69,7 +69,7 @@ describe('Additional pipeline endpoints', () => {
       expect(res.status).toBe(200);
       expect(res.body).toMatchObject({
         rule: { enabled: true },
-        knowledge: { scam_patterns: 16, official_domains: 23 },
+        knowledge: { scam_patterns: 16, official_domains: 55 },
         ml: { configured: true, confidence_threshold: 0.9 },
         rag: { configured: true, embedding_model: 'text-embedding-3-small', rerank: true },
         llm: { configured: true, provider: 'gemini', model: 'gemini-3.8-flash', mode: 'always' },
