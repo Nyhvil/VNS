@@ -225,6 +225,10 @@ export interface FeatureSet {
   signals?: ScamSignalFinding[];
   /** The content is a one-time code sent by a real service (see scam-signals.ts). */
   one_time_code_notice?: boolean;
+  /** A news article or public warning about scams (see knowledge/scam-signals.ts). */
+  scam_warning?: boolean;
+  /** A notice that only points to official links or channels and asks for nothing risky. */
+  official_notice?: boolean;
 }
 
 export interface ScamSignalFinding {

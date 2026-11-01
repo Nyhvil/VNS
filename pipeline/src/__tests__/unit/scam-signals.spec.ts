@@ -15,8 +15,9 @@ describe('detectSignals', () => {
   });
 
   it('ignores a code phrase inside a warning', () => {
-    expect(ids('Tuyệt đối không cung cấp mã cho bất kỳ ai')).not.toContain('code_request');
-    expect(ids('KHONG cung cap ma nay cho ai')).not.toContain('code_request');
+    expect(ids('Tuyệt đối không cung cấp mã OTP cho bất kỳ ai')).not.toContain('code_request');
+    expect(ids('KHONG cung cap ma OTP nay cho ai')).not.toContain('code_request');
+    expect(ids('Đừng chuyển tiền cho người lạ')).not.toContain('money_request');
   });
 
   it('does not read "tại ứng dụng" typed without diacritics as "install an app"', () => {

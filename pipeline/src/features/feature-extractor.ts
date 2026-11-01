@@ -3,27 +3,39 @@ import { isParsedEmail } from '../types';
 import { normalizeAndAnalyzeUrl } from './url-normalizer';
 import { detectSuspiciousKeywords } from './keyword-detector';
 import { checkKnowledge } from '../knowledge';
-import { detectSignals, isOneTimeCodeNotice } from '../knowledge/scam-signals';
+import { detectSignals, isOfficialNotice, isOneTimeCodeNotice, isScamWarning } from '../knowledge/scam-signals';
 
 // Checks that a genuine one-time-code message would trip.
 const OTP_KEYWORDS = new Set(['mã otp', 'mã xác thực', 'cung cấp mã']);
 const OTP_PATTERNS = new Set(['fake_bank_otp', 'sim_swap']);
 
-/** Signals, and the one-time-code exception, added to the features of any content. */
+/**
+ * Signals, and the exceptions for content that only looks like a scam: a
+ * genuine one-time-code message, a news article or warning about scams, and a
+ * notice that only points to official channels.
+ */
 function withSignals(features: FeatureSet, text: string): FeatureSet {
-  const unofficialLinks = (features.knowledge?.urls ?? []).filter(u => u.suspicious).length;
-  const notice = isOneTimeCodeNotice(text, unofficialLinks);
-  if (!notice) return { ...features, signals: detectSignals(text), one_time_code_notice: false };
-  return {
-    ...features,
-    suspicious_keywords: features.suspicious_keywords.filter(k => !OTP_KEYWORDS.has(k)),
-    knowledge: features.knowledge && {
-      ...features.knowledge,
-      patterns: features.knowledge.patterns.filter(p => !OTP_PATTERNS.has(p.id)),
-    },
-    signals: detectSignals(text).filter(s => s.id !== 'code_request'),
-    one_time_code_notice: true,
-  };
+  const links = features.knowledge?.urls ?? [];
+  const flaggedLinks = links.filter(u => u.suspicious).length;
+
+  if (isScamWarning(text, flaggedLinks)) {
+    return { ...features, signals: [], scam_warning: true, one_time_code_notice: false, official_notice: false };
+  }
+
+  const notice = isOneTimeCodeNotice(text, flaggedLinks);
+  let result: FeatureSet = { ...features, signals: detectSignals(text), one_time_code_notice: notice };
+  if (notice) {
+    result = {
+      ...result,
+      suspicious_keywords: features.suspicious_keywords.filter(k => !OTP_KEYWORDS.has(k)),
+      knowledge: features.knowledge && {
+        ...features.knowledge,
+        patterns: features.knowledge.patterns.filter(p => !OTP_PATTERNS.has(p.id)),
+      },
+      signals: (result.signals ?? []).filter(s => s.id !== 'code_request'),
+    };
+  }
+  return { ...result, official_notice: isOfficialNotice(text, links, result.signals ?? []) };
 }
 
 function extractDomain(email: string | null): string | null {

@@ -66,6 +66,13 @@ export function checkUrlSafety(url: string, officialDomains: string[] = OFFICIAL
     return { url, hostname: '', official: false, suspicious: true, flags, reasons: ['URL không hợp lệ'] };
   }
 
+  // A host without a dot or with an underscore is not a real public domain
+  // ("http://mttq-http//mttq_gov.online", a link mangled to fool filters).
+  if (!hostname.includes('.') || hostname.includes('_')) {
+    flags.invalid = true;
+    return { url, hostname, official: false, suspicious: true, flags, reasons: ['Tên miền không hợp lệ'] };
+  }
+
   if (isOfficialDomain(hostname, officialDomains)) {
     return {
       url,
