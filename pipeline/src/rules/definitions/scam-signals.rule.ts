@@ -9,6 +9,7 @@ import { FeatureSet, Finding, Severity } from '../../types';
  *     too-good promise, an impersonated channel or a remote app      → high
  *   - an easy online job together with money or a fee (task scam)  → high
  *   - betting ads with a link                                         → high
+ *   - proof of funds or ID papers with a too-good offer or a deadline → high
  *   - two other moves together, or several job-lure or betting words → medium
  */
 const PRESSURE = new Set(['urgency', 'threat', 'secrecy', 'too_good', 'channel_switch', 'remote_app']);
@@ -30,6 +31,7 @@ export const scamSignalsRule = {
     else if (ids.has('remote_app') && pressure.filter(s => s.id !== 'remote_app').length >= 2) severity = 'high';
     else if (ids.has('job_lure') && asksMoney) severity = 'high';
     else if (ids.has('gambling') && features.urls.length > 0) severity = 'high';
+    else if (ids.has('balance_proof') && (ids.has('too_good') || ids.has('urgency') || ids.has('threat'))) severity = 'high';
     else if (signals.length >= 2) severity = 'medium';
     else if (signals.some(s => (s.id === 'job_lure' || s.id === 'gambling') && s.matched.length >= 2)) severity = 'medium';
 

@@ -82,6 +82,19 @@ describe('scams that were missed', () => {
     expect(ids('Chi cho em muon tien 5 trieu chuyen qua so nay giup em')).toContain('money_request');
   });
 
+  it('fake scholarship letter that asks for proof of funds', () => {
+    const letter =
+      'GIẤY BÁO TRÚNG TUYỂN. Em đã lọt vào danh sách 15 sinh viên giành được Học bổng thực tập quốc tế tại Nhật Bản. ' +
+      'Giấy tờ bắt buộc: 01 bản sao CCCD, 01 bản sao sổ hộ khẩu. Sinh viên cần chứng minh khả năng tự chi trả bằng ' +
+      'giấy xác nhận số dư tài khoản bằng 235.000.000 VND. Hạn cuối hoàn thành hồ sơ: 11h00 ngày 04/10. ' +
+      'Nộp qua email: https://www.vlu.edu.vn/. Tuyệt đối không đóng bất kỳ khoản phí nào cho nhà trường.';
+    expect(score(letter)).toBeGreaterThan(70);
+  });
+
+  it('a genuine admission notice that lists ID papers is not flagged', () => {
+    expect(score('Thông báo nhập học: tân sinh viên mang theo bản sao giấy khai sinh, bản sao CCCD và học bạ đến trường ngày 20/8.')).toBeLessThanOrEqual(SAFE);
+  });
+
   it('a mangled link is not a valid domain', () => {
     expect(checkUrlSafety('http://mttq-http//mttq_gov.online/confirm').suspicious).toBe(true);
   });
