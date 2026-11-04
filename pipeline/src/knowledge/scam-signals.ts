@@ -22,7 +22,9 @@ export type SignalId =
   | 'channel_switch'
   | 'remote_app'
   | 'job_lure'
-  | 'gambling';
+  | 'gambling'
+  | 'balance_proof'
+  | 'id_papers';
 
 export interface ScamSignal {
   id: SignalId;
@@ -109,6 +111,9 @@ export const SIGNAL_DEFINITIONS: SignalDefinition[] = [
       'nâng hạn mức', 'không cần thế chấp', 'giải ngân trong',
       'room vip', 'nhóm vip', 'nhóm zalo nội bộ', 'x2 tài khoản', 'nhân đôi tài khoản', 'hiệu suất x2', 'x5 tài sản',
       'tín hiệu giao dịch', 'nạp đầu', 'nhận gấp 2', 'gấp đôi số tiền',
+      // Học bổng, thực tập, du học ở nước ngoài
+      'giành được học bổng', 'trúng tuyển học bổng', 'học bổng thực tập', 'học bổng toàn phần', 'lọt vào danh sách',
+      'thực tập quốc tế', 'thực tập tại nhật', 'xuất cảnh', 'hỗ trợ 100%',
     ],
     patterns: [/\bnap \d+k? (?:nhan|tang) \d+k?\b/, /lai \d+(?:[.,]\d+)?%\s*\/?\s*(ngay|tuan|thang)/, /loi nhuan \d+(?:[.,]\d+)?%/, /\d+ ?- ?\d+ trieu\s*\/\s*thang/],
   },
@@ -149,6 +154,22 @@ export const SIGNAL_DEFINITIONS: SignalDefinition[] = [
     ],
     // Betting site names with digits: 8qbet84, fb88bet...
     patterns: [/\b(?:\w*\d\w*bet\w*|\w*bet\d+\w*)\b/],
+  },
+  {
+    id: 'balance_proof',
+    label: 'Bắt chứng minh tài chính hoặc xác nhận số dư tài khoản',
+    phrases: [
+      // Chiêu học bổng, du học, xuất khẩu lao động giả: bắt gửi tiền vào tài
+      // khoản để "xác nhận số dư", rồi chiếm đoạt.
+      'chứng minh tài chính', 'chứng minh khả năng tài chính', 'chứng minh khả năng tự chi trả', 'xác nhận số dư',
+      'giấy xác nhận số dư', 'số dư tài khoản bằng', 'sổ tiết kiệm', 'phí xuất cảnh', 'phí visa', 'phí thực tập',
+    ],
+  },
+  {
+    id: 'id_papers',
+    label: 'Đòi bản sao giấy tờ tùy thân',
+    // Trường học, ngân hàng thật cũng đòi giấy tờ, nên dấu hiệu này chỉ tính khi đi cùng dấu hiệu khác.
+    phrases: ['bản sao cccd', 'ảnh cccd', 'chụp cccd', 'bản sao sổ hộ khẩu', 'sổ hộ khẩu', 'giấy khai sinh'],
   },
 ];
 
@@ -240,7 +261,7 @@ export function isOneTimeCodeNotice(rawText: string, unofficialLinkCount: number
 }
 
 /** Signals that ask the reader to do something risky. */
-export const REQUEST_SIGNALS = new Set<SignalId>(['money_request', 'upfront_fee', 'code_request', 'remote_app']);
+export const REQUEST_SIGNALS = new Set<SignalId>(['money_request', 'upfront_fee', 'code_request', 'remote_app', 'balance_proof']);
 
 // Words of a news report or a public warning about scams, not of a scam itself:
 // scammers do not call their target a "nạn nhân" or describe their "thủ đoạn".
