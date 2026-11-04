@@ -1,0 +1,20 @@
+# Render bản miễn phí ngủ sau 15 phút không có ai gọi; lần gọi đầu sau đó chờ
+# khoảng 50 giây. Gọi /pipeline/health mỗi 10 phút để máy chấm điểm luôn thức.
+# Lịch của GitHub có thể trễ vài phút; trang chủ VnS cũng tự đánh thức khi mở.
+# 720 giờ/tháng một dịch vụ chạy liên tục vẫn nằm trong 750 giờ miễn phí của Render.
+name: Giữ máy chấm điểm thức
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Gọi /pipeline/health
+        run: curl -sS -o /dev/null -w "HTTP %{http_code} trong %{time_total}s\n" --max-time 120 https://vns-3hub.onrender.com/pipeline/health || true
