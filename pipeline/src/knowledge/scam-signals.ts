@@ -24,7 +24,10 @@ export type SignalId =
   | 'job_lure'
   | 'gambling'
   | 'balance_proof'
-  | 'id_papers';
+  | 'id_papers'
+  | 'hidden_details'
+  | 'hostess'
+  | 'off_platform';
 
 export interface ScamSignal {
   id: SignalId;
@@ -143,7 +146,12 @@ export const SIGNAL_DEFINITIONS: SignalDefinition[] = [
       'không mất bất kì khoản chi phí', 'không mất bất kỳ khoản chi phí', 'job onl', 'jobs onl', 'việc onl',
       'onl tại nhà', 'online tại nhà', 'ctv online', 'cộng tác viên online', 'lương cuối ngày',
       'phát lương hàng ngày', 'nhận lương ngay', 'thả tim', 'làm nhiệm vụ', 'kiếm ít xiền lẻ', 'kiếm tiền lẻ',
+      // Việc "nhẹ" làm tại nhà hay dùng để dụ nạp tiền
+      'nhập liệu online', 'gõ văn bản', 'đánh máy tại nhà', 'chép sách', 'xâu hạt', 'dán tem tại nhà', 'đóng gói tại nhà',
+      'like share', 'xem video kiếm tiền', 'đánh giá google maps', 'tăng tương tác', 'đơn ảo', 'chốt đơn ảo',
     ],
+    // "30k/đơn", "50k / nhiệm vụ", "lương 2-3tr/ngày"
+    patterns: [/\b\d+ ?k\s*\/\s*(don|nhiem vu|bai|video|like|luot)\b/, /\bluong \d+\s*-?\s*\d*\s*(tr|trieu)\s*\/\s*(ngay|tuan)\b/],
   },
   {
     id: 'gambling',
@@ -154,6 +162,32 @@ export const SIGNAL_DEFINITIONS: SignalDefinition[] = [
     ],
     // Betting site names with digits: 8qbet84, fb88bet...
     patterns: [/\b(?:\w*\d\w*bet\w*|\w*bet\d+\w*)\b/],
+  },
+  {
+    id: 'hidden_details',
+    label: 'Giấu thông tin quan trọng (địa chỉ, công ty) hoặc bỏ qua bước xác minh',
+    phrases: [
+      'địa chỉ trao đổi', 'địa chỉ sẽ trao đổi', 'địa chỉ sẽ được trao đổi', 'inbox để biết địa chỉ', 'ib để biết địa chỉ',
+      'liên hệ để biết địa chỉ', 'không cần phỏng vấn', 'nhận việc ngay không cần', 'không cần cccd', 'không cần hồ sơ',
+    ],
+  },
+  {
+    id: 'hostess',
+    label: 'Tuyển "tiếp khách", ca đêm, ưu tiên ngoại hình (dễ bị lợi dụng, bóc lột)',
+    // Chỉ tính khi có từ hai cụm trở lên: một cụm đứng riêng thường là tin thật.
+    phrases: [
+      'tiếp khách', 'phục vụ khách nước ngoài', 'ngoại hình ưa nhìn', 'ngoại hình khá', 'ưu tiên nữ', 'ca đêm',
+      'karaoke', 'massage', 'quán bar',
+    ],
+  },
+  {
+    id: 'off_platform',
+    label: 'Dụ giao dịch ngoài sàn hoặc chuyển khoản trước khi nhận hàng',
+    phrases: [
+      'giao dịch ngoài', 'không qua sàn', 'hủy đơn', 'huỷ đơn', 'chuyển khoản 100%', 'không ship cod', 'không nhận cod',
+      'cọc 50%', 'cọc trước', 'đặt cọc', 'ib zalo để được giá', 'kết bạn zalo để', 'giá sốc', 'rẻ hơn thị trường',
+      'giá rẻ bất ngờ', 'thanh lý gấp', 'hàng xách tay giá rẻ', 'chỉ còn vài suất',
+    ],
   },
   {
     id: 'balance_proof',
@@ -186,7 +220,7 @@ const WORD_CHAR = /[\p{L}\p{N}]/u;
  * The phrase occurs as whole words ("việc onl" must not match "việc online"),
  * ignoring diacritics when the text has none.
  */
-function hasPhrase(text: PreparedText, phrase: string): boolean {
+export function hasPhrase(text: PreparedText, phrase: string): boolean {
   const haystack = haystackOf(text);
   const needle = (text.hasDiacritics ? phrase.toLowerCase() : stripDiacritics(phrase)).normalize('NFC');
   if (!needle) return false;

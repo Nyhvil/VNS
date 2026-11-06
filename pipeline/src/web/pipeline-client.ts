@@ -65,24 +65,30 @@ export interface PipelineResponse {
   };
   vns?: {
     scam_percent: number;
-    risk_level: "SAFE" | "SUSPICIOUS" | "SCAM";
+    risk_level: "SAFE" | "SUSPICIOUS" | "SCAM" | "REVIEW";
     explanation: string;
     dangerous_phrases: string[];
     advice: string;
     verification_summary: string;
     extracted_text?: string;
+    content_type?: string;
+    checklist?: string[];
   };
 }
 
 /** What analyze-content returns to the web app. */
 export interface AnalysisResult {
   scamPercent: number;
-  riskLevel: "SAFE" | "SUSPICIOUS" | "SCAM";
+  /** REVIEW = no warning sign, but a kind of post (job, sale, loan...) worth checking further. */
+  riskLevel: "SAFE" | "SUSPICIOUS" | "SCAM" | "REVIEW";
   explanation: string;
   dangerousPhrases: string[];
   advice: string;
   verificationSummary?: string;
   extractedText?: string;
+  /** Kind of post, e.g. "Tin tuyển dụng", and what the reader can check for it. */
+  contentType?: string;
+  checklist?: string[];
   urlsChecked: number;
   suspiciousUrls: { url: string; reasons: string[] }[];
   entitiesMentioned: { found: string[]; category: string; verified: boolean }[];
@@ -198,11 +204,13 @@ export function mapPipelineResponse(response: PipelineResponse): PipelineOutcome
 
   const result: AnalysisResult = {
     scamPercent,
-    // The level always follows the score, as in the built-in analysis.
-    riskLevel: toRiskLevel(scamPercent),
+    // The level follows the score; a low score can be "check further" for a gray kind of post.
+    riskLevel: vns?.risk_level === "REVIEW" && scamPercent <= 30 ? "REVIEW" : toRiskLevel(scamPercent),
     explanation: vns?.explanation ?? "",
     dangerousPhrases: vns?.dangerous_phrases ?? [],
     advice: vns?.advice ?? "",
+    ...(vns?.content_type ? { contentType: vns.content_type } : {}),
+    ...(vns?.checklist?.length ? { checklist: vns.checklist } : {}),
     urlsChecked: urlChecks.length,
     suspiciousUrls: urlChecks
       .filter((u) => u.suspicious)
