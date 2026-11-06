@@ -3,6 +3,7 @@ import { extractTextFromImage } from './ocr-processor';
 import { parsePlainText } from './plain-text-parser';
 import { normalizeOcrText } from './ocr-normalizer';
 import { decodeQrCodes } from './qr-decoder';
+import { hasCheckableContent } from './content-check';
 
 export interface ImageParseResult {
   parsed: ParsedText;
@@ -30,6 +31,10 @@ export async function parseImage(imageBase64: string): Promise<ImageParseResult>
     // Every OCR engine failed (for example the provider is out of quota).
     // A QR code alone may still be enough to analyse.
   }
+
+  // A photo with no message in it (food, a face, scenery): OCR returns stray
+  // letters that cannot be judged, so the image is reported as unreadable.
+  if (text && !hasCheckableContent(text, qrCodes)) text = '';
 
   if (!text && qrCodes.length === 0) {
     return {

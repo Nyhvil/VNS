@@ -51,6 +51,7 @@ Extract the text content and return a JSON object with the following fields:
     "timestamp": "The timestamp of the chat or document if visible, otherwise null"
   }
 }
+If the image holds no message, email, document or other readable text (for example food, people, animals or scenery), return "text": "" and never describe the picture.
 Respond strictly in JSON format.`
         },
         {
