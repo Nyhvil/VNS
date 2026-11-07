@@ -123,7 +123,12 @@ export interface LayerScore {
 export type AnalysisPath = 'fast_ml' | 'deep';
 
 /** Three-level verdict shown to end users. */
-export type VnsRiskLevel = 'SAFE' | 'SUSPICIOUS' | 'SCAM';
+/**
+ * SAFE / SUSPICIOUS / SCAM by score; REVIEW = no warning sign, but a kind of
+ * content (job ad, sale post, loan...) that honest people and scammers both
+ * post, so the reader should check further (knowledge/content-type.ts).
+ */
+export type VnsRiskLevel = 'SAFE' | 'SUSPICIOUS' | 'SCAM' | 'REVIEW';
 
 export interface VnsVerdict {
   scam_percent: number;
@@ -133,6 +138,10 @@ export interface VnsVerdict {
   advice: string;
   verification_summary: string;
   extracted_text?: string;
+  /** Kind of content, e.g. "Tin tuyển dụng" (gray kinds only). */
+  content_type?: string;
+  /** What the reader can check for this kind of content. */
+  checklist?: string[];
 }
 
 export interface AnalysisResponse {
@@ -229,6 +238,8 @@ export interface FeatureSet {
   scam_warning?: boolean;
   /** A notice that only points to official links or channels and asks for nothing risky. */
   official_notice?: boolean;
+  /** A gray kind of content (job ad, sale post, loan...), see knowledge/content-type.ts. */
+  content_type?: import('../knowledge/content-type').ContentTypeResult | null;
 }
 
 export interface ScamSignalFinding {

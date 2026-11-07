@@ -4,6 +4,7 @@ import { normalizeAndAnalyzeUrl } from './url-normalizer';
 import { detectSuspiciousKeywords } from './keyword-detector';
 import { checkKnowledge } from '../knowledge';
 import { detectSignals, isOfficialNotice, isOneTimeCodeNotice, isScamWarning } from '../knowledge/scam-signals';
+import { detectContentType } from '../knowledge/content-type';
 
 // Checks that a genuine one-time-code message would trip.
 const OTP_KEYWORDS = new Set(['mã otp', 'mã xác thực', 'cung cấp mã']);
@@ -35,7 +36,11 @@ function withSignals(features: FeatureSet, text: string): FeatureSet {
       signals: (result.signals ?? []).filter(s => s.id !== 'code_request'),
     };
   }
-  return { ...result, official_notice: isOfficialNotice(text, links, result.signals ?? []) };
+  return {
+    ...result,
+    official_notice: isOfficialNotice(text, links, result.signals ?? []),
+    content_type: detectContentType(text, links.map(l => l.hostname)),
+  };
 }
 
 function extractDomain(email: string | null): string | null {

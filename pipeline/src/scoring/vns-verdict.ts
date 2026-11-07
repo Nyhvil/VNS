@@ -8,6 +8,7 @@ import {
   VnsVerdict,
   AnalysisPath,
 } from '../types';
+import { CHECKLISTS, MIN_TRUST_DETAILS } from '../knowledge/content-type';
 
 /**
  * The verdict in the shape the VNS web app shows: three levels, a percentage,
@@ -55,13 +56,28 @@ const DEFAULT_ADVICE: Record<VnsRiskLevel, string> = {
     'Hãy thận trọng: xác minh người gửi qua kênh chính thức trước khi bấm link, cung cấp thông tin hoặc chuyển tiền.',
   SAFE:
     'Chưa thấy dấu hiệu lừa đảo rõ ràng. Dù vậy, hãy luôn cảnh giác với mọi yêu cầu cung cấp thông tin cá nhân hoặc chuyển tiền.',
+  REVIEW:
+    'Chưa thấy dấu hiệu lừa đảo rõ ràng, nhưng chưa đủ để kết luận là an toàn. Hãy tự kiểm tra theo các bước bên dưới trước khi chuyển tiền hay gửi thông tin.',
 };
+
+/**
+ * A gray kind of content (job ad, sale post, loan, investment, dating) with no
+ * warning sign is not proof that it is genuine: say "check further" unless the
+ * post carries enough concrete, checkable details or links only to official sites.
+ */
+function needsReview(level: VnsRiskLevel, features: FeatureSet | undefined): boolean {
+  const kind = features?.content_type;
+  if (level !== 'SAFE' || !kind) return false;
+  if (features?.official_notice) return false;
+  return kind.trust.length < MIN_TRUST_DETAILS;
+}
 
 function buildExplanation(
   level: VnsRiskLevel,
   findings: Finding[],
   ml: MlResult | undefined,
-  path: AnalysisPath
+  path: AnalysisPath,
+  kindLabel?: string
 ): string {
   const parts: string[] = [];
 
@@ -73,7 +89,10 @@ function buildExplanation(
 
   const reasons = findings.map(describeFinding);
 
-  if (level === 'SCAM') {
+  if (level === 'REVIEW') {
+    parts.push(`Chưa thấy dấu hiệu lừa đảo rõ ràng. Đây là ${kindLabel?.toLowerCase() ?? 'loại nội dung'}, loại tin cả người thật lẫn kẻ lừa đảo đều đăng, nên cần tự kiểm tra thêm.`);
+    if (reasons.length > 0) parts.push(`Có vài yếu tố nên lưu ý: ${reasons.join('; ')}.`);
+  } else if (level === 'SCAM') {
     parts.push(
       reasons.length > 0
         ? `Nội dung có nhiều dấu hiệu lừa đảo: ${reasons.join('; ')}.`
@@ -154,23 +173,34 @@ export interface VerdictInput {
 }
 
 export function buildVnsVerdict(input: VerdictInput): VnsVerdict {
-  const level = toVnsRiskLevel(input.riskScore);
+  const scoreLevel = toVnsRiskLevel(input.riskScore);
+  const kind = input.features?.content_type ?? undefined;
+  const level: VnsRiskLevel = needsReview(scoreLevel, input.features) ? 'REVIEW' : scoreLevel;
   const llm = input.llm?.succeeded ? input.llm : undefined;
+  const ownExplanation = buildExplanation(level, input.findings, input.ml, input.path, kind?.label);
 
   const verdict: VnsVerdict = {
     scam_percent: input.riskScore,
     risk_level: level,
-    explanation: llm?.explanation || buildExplanation(level, input.findings, input.ml, input.path),
+    // For REVIEW the model's "looks fine" would contradict the level: lead with ours.
+    explanation:
+      level === 'REVIEW'
+        ? [ownExplanation, llm?.explanation && `Nhận xét của AI: ${llm.explanation}`].filter(Boolean).join(' ')
+        : llm?.explanation || ownExplanation,
     dangerous_phrases:
       llm?.dangerous_phrases && llm.dangerous_phrases.length > 0
         ? llm.dangerous_phrases
         : collectDangerousPhrases(input.features),
-    advice: llm?.advice || DEFAULT_ADVICE[level],
+    advice: level === 'REVIEW' ? DEFAULT_ADVICE.REVIEW : llm?.advice || DEFAULT_ADVICE[level],
     verification_summary:
       llm?.verification_summary || buildVerificationSummary(input.features, input.ragResult),
   };
 
   if (input.extractedText) verdict.extracted_text = input.extractedText;
+  if (kind) {
+    verdict.content_type = kind.label;
+    verdict.checklist = CHECKLISTS[kind.type];
+  }
 
   return verdict;
 }
